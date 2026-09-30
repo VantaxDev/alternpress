@@ -1,0 +1,9 @@
+Options -Indexes
+# Serve uploaded files as static raster images, regardless of inherited handlers.
+SetHandler default-handler
+<FilesMatch "(?i)\.(?:php[0-9]*|phtml|phar|cgi|pl|py|sh|html?|svg|shtml)(?:\.|$)">
+Require all denied
+</FilesMatch>
+<FilesMatch "(?i)^(?!.*\.(?:jpe?g|png|webp|gif)$).*">
+Require all denied
+</FilesMatch>

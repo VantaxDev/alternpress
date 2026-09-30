@@ -1,0 +1,17 @@
+/config.local.php
+/storage/*
+!/storage/.htaccess
+!/storage/.gitkeep
+/media/*
+!/media/.htaccess
+!/media/.gitkeep
+/cache/*
+!/cache/.htaccess
+!/cache/.gitkeep
+*.tar
+*.tar.gz
+*.zip
+.DS_Store
+__pycache__/
+/content/*/post/*
+!/content/*/post/2026-09-29-la-prima-parola/

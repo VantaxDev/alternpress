@@ -1,0 +1,22 @@
+Options -Indexes -MultiViews
+DirectoryIndex index.php
+<FilesMatch "(?i)^(?:alt-cli|config(?:\.local)?\.php|.*\.(?:md|json|lock|log|bak|preCPT|tgz|zip|tar|gz|sql|ini|ya?ml|sh|py)|.*~)$">
+    Require all denied
+</FilesMatch>
+<IfModule mod_rewrite.c>
+RewriteEngine On
+RewriteRule ^(?:storage|content|cache|lib|bin|tests)(?:/|$) - [F,L]
+RewriteRule (^|/)\. - [F,L]
+RewriteCond %{REQUEST_FILENAME} -f [OR]
+RewriteCond %{REQUEST_FILENAME} -d
+RewriteRule ^ - [L]
+RewriteRule ^ index.php [L,QSA]
+</IfModule>
+
+<IfModule php_module>
+php_value upload_max_filesize 64M
+php_value post_max_size 70M
+php_value memory_limit 256M
+php_flag display_errors Off
+php_flag log_errors On
+</IfModule>

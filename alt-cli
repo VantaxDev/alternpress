@@ -1,0 +1,225 @@
+#!/usr/bin/env php
+<?php
+declare(strict_types=1);
+if (PHP_SAPI !== 'cli') { http_response_code(404); exit; }
+define('AP_LIBRARY', true);
+require __DIR__ . '/index.php';
+require __DIR__ . '/lib/admin.php';
+require __DIR__ . '/lib/backups.php';
+require __DIR__ . '/lib/diagnostics.php';
+function t(string $it, string $en): string { return $en; }
+function say(string $line): void { fwrite(STDOUT, $line . "\n"); }
+function cli_files(): array {
+    $files = [];
+    $directory = new RecursiveDirectoryIterator(AP_ROOT, FilesystemIterator::SKIP_DOTS);
+    $filter = new RecursiveCallbackFilterIterator($directory, static function(SplFileInfo $file): bool {
+        $relative = str_replace('\\', '/', substr($file->getPathname(), strlen(AP_ROOT) + 1));
+        // Prune excluded trees before visiting them, including large archives.
+        if (preg_match('#^(?:\.git|cache|storage/(?:backups|restore))(?:/|$)|(?:^|/)(?:\.ap-|write\.lock|attempts\.php)#', $relative)) return false;
+        if ($file->isLink()) throw new RuntimeException('A symlink prevents complete backup: ' . $relative);
+        return true;
+    });
+    $iterator = new RecursiveIteratorIterator($filter);
+    foreach ($iterator as $file) {
+        $relative = substr($file->getPathname(), strlen(AP_ROOT) + 1);
+        if (!$file->isFile() || $file->isLink() || preg_match('#^(?:\.git/|cache/|storage/(?:backups|restore)/)|(?:^|/)(?:\.ap-|write\.lock|attempts\.php)#', $relative)) continue;
+        $files[$relative] = $file->getPathname();
+    }
+    ksort($files); return $files;
+}
+function cli_internal_link(string $url, string $source): ?bool {
+    if ($url === '' || $url[0] === '#' || str_starts_with($url, 'mailto:') || str_starts_with($url, 'tel:')) return null;
+    if (str_starts_with($url, '@media/')) return cli_local_file('media/' . rawurldecode(substr($url, 7)));
+    $path = rawurldecode(parse_url($url, PHP_URL_PATH) ?? '');
+    if ($path === '' || $path === '/') return true;
+    if (!str_starts_with($path, '/')) return cli_local_file(substr(dirname($source), strlen(AP_ROOT) + 1) . '/' . $path);
+    $base = (string) ap_config('base_path');
+    if ($base !== '' && str_starts_with($path, $base . '/')) $path = substr($path, strlen($base));
+    $path = rtrim($path, '/');
+    foreach (SUPPORTED_LANGUAGES as $language) {
+        if ($path === '/' . $language) return true;
+        if (str_starts_with($path, '/' . $language . '/')) return route_content_exists(AP_ROOT . '/content', $language, substr($path, strlen($language) + 1));
+    }
+    if (in_array($path, ['/home', '/about', '/skills', '/archive', '/tags'], true)) return true;
+    if (str_starts_with($path, '/post/') || str_starts_with($path, '/tag/')) return route_content_exists(AP_ROOT . '/content', DEFAULT_LANGUAGE, $path);
+    return cli_local_file(ltrim($path, '/'));
+}
+function cli_local_file(string $relative): bool {
+    if (preg_match('~[\\\\\x00-\x1f\x7f]~', $relative)) return false;
+    $segments = [];
+    foreach (explode('/', $relative) as $segment) {
+        if ($segment === '' || $segment === '.') continue;
+        if ($segment === '..') { if (!$segments) return false; array_pop($segments); }
+        else $segments[] = $segment;
+    }
+    $path = AP_ROOT . '/' . implode('/', $segments);
+    try { ap_backup_assert_path($path); } catch (RuntimeException) { return false; }
+    return is_file($path);
+}
+function cli_public_ipv4(string $address): bool {
+    if (!filter_var($address, FILTER_VALIDATE_IP, FILTER_FLAG_IPV4 | FILTER_FLAG_NO_PRIV_RANGE | FILTER_FLAG_NO_RES_RANGE)) return false;
+    $number = ip2long($address);
+    // Include shared address space, benchmarking and documentation ranges that
+    // FILTER_FLAG_NO_RES_RANGE does not consistently reject across PHP versions.
+    foreach (['0.0.0.0/8', '100.64.0.0/10', '192.0.0.0/24', '192.0.2.0/24', '198.18.0.0/15', '198.51.100.0/24', '203.0.113.0/24', '224.0.0.0/4', '240.0.0.0/4'] as $range) {
+        [$network, $bits] = explode('/', $range);
+        $mask = -1 << (32 - (int) $bits);
+        if (($number & $mask) === (ip2long($network) & $mask)) return false;
+    }
+    return true;
+}
+function cli_external_parts(string $url): ?array {
+    if (strlen($url) > 8192 || preg_match('~[\\\\\x00-\x20\x7f]~', $url) || !filter_var($url, FILTER_VALIDATE_URL)) return null;
+    $parts = parse_url($url);
+    if (!$parts || !in_array(strtolower($parts['scheme'] ?? ''), ['http', 'https'], true) || isset($parts['user']) || isset($parts['pass'])) return null;
+    $parts['scheme'] = strtolower($parts['scheme']);
+    $parts['host'] = strtolower($parts['host'] ?? '');
+    if (!preg_match('/\A[a-z0-9](?:[a-z0-9.-]*[a-z0-9])?\z/D', $parts['host'])) return null;
+    $parts['port'] ??= $parts['scheme'] === 'https' ? 443 : 80;
+    // A Markdown link checker is not a general-purpose network scanner.
+    if (!in_array($parts['port'], [80, 443], true)) return null;
+    return $parts;
+}
+function cli_external_link(string $url): array {
+    if (!function_exists('curl_init')) throw new RuntimeException('The optional --external check needs the PHP curl extension.');
+    for ($hop = 0; $hop < 6; $hop++) {
+        $parts = cli_external_parts($url);
+        if (!$parts) return [0, 'unsupported URL (HTTP/HTTPS on ports 80/443 only)'];
+        $host = $parts['host'];
+        $addresses = gethostbynamel($host) ?: [];
+        $public = array_values(array_filter($addresses, 'cli_public_ipv4'));
+        if (!$public || count($public) !== count($addresses)) return [0, 'no public IPv4 address'];
+        $port = $parts['port'];
+        $redirect = null;
+        $curl = curl_init($url);
+        curl_setopt_array($curl, [CURLOPT_NOBODY => true, CURLOPT_RETURNTRANSFER => true, CURLOPT_FOLLOWLOCATION => false, CURLOPT_CONNECTTIMEOUT => 5, CURLOPT_TIMEOUT => 12, CURLOPT_USERAGENT => 'AlternPress link-checker', CURLOPT_PROXY => '', CURLOPT_IPRESOLVE => CURL_IPRESOLVE_V4, CURLOPT_RESOLVE => [$host . ':' . $port . ':' . $public[0]], CURLOPT_PROTOCOLS => CURLPROTO_HTTP | CURLPROTO_HTTPS, CURLOPT_HEADERFUNCTION => static function($handle, $line) use (&$redirect) { if (stripos($line, 'Location:') === 0) $redirect = trim(substr($line, 9)); return strlen($line); }]);
+        curl_exec($curl); $status = (int) curl_getinfo($curl, CURLINFO_RESPONSE_CODE); $error = curl_error($curl); curl_close($curl);
+        if ($status < 300 || $status >= 400 || !$redirect) return [$status, $error];
+        if (str_starts_with($redirect, '//')) $redirect = $parts['scheme'] . ':' . $redirect;
+        elseif (!preg_match('#^https?://#i', $redirect)) {
+            $origin = $parts['scheme'] . '://' . $host . (isset($parts['port']) ? ':' . $port : '');
+            $redirect = $origin . (str_starts_with($redirect, '/') ? $redirect : rtrim(dirname($parts['path'] ?? '/'), '/.') . '/' . $redirect);
+        }
+        $url = $redirect;
+    }
+    return [0, 'too many redirects'];
+}
+
+// Internal test seam; this file still rejects every non-CLI entry point.
+if (defined('AP_CLI_FUNCTIONS_ONLY') && AP_CLI_FUNCTIONS_ONLY) return;
+
+$command = $argv[1] ?? 'help';
+try {
+    switch ($command) {
+        case 'help':
+        case '--help':
+        case '-h':
+            say("AlternPress 0.4.0-alpha — simple, self-contained, yours.\n\nUsage: ./alt-cli COMMAND\n\n  status                 Counts and site location\n  doctor                 Check PHP, configuration and writable directories\n  cache:clear            Clear generated article indexes\n  password               Set/reset the only admin password (hidden input)\n  backup                 Create a complete private .tar.gz backup + SHA-256\n  backup:data            Create a data archive for restore in the dashboard\n  check                  Check recursive permissions, local links and unused photos\n  check --json           Machine-readable check report\n  backup:verify FILE     Verify a backup against its .sha256 sidecar\n  links:check            Check local Markdown links and images\n  links:check --external Also check public external links (HTTP HEAD)\n  version                Print the version\n  help                   Show this help\n\nRun as the web user, e.g. sudo -u www-data ./alt-cli backup.\nNo package manager, database or external service is required.\n"); break;
+        case 'version': say('AlternPress 0.4.0-alpha'); break;
+        case 'status':
+            $rows = ap_all_posts(); $published = 0; $drafts = 0;
+            foreach ($rows as $row) foreach ($row['translations'] as $doc) { if (ap_published($doc['meta'])) $published++; else $drafts++; }
+            say(ap_config('name') . ' · AlternPress 0.4.0-alpha'); say('Directory: ' . AP_ROOT);
+            say(count($rows) . ' articles · ' . $published . ' published translations · ' . $drafts . ' drafts');
+            say(count(glob(AP_ROOT . '/media/*.{jpg,png,webp}', GLOB_BRACE) ?: []) . ' photos');
+            say('Admin password: ' . (ap_private_read('auth') ? 'configured' : 'not configured')); break;
+        case 'doctor':
+            $failed = false;
+            $checks = ['PHP >= 8.2' => PHP_VERSION_ID >= 80200, 'Valid languages' => count(SUPPORTED_LANGUAGES) === 2 && !array_diff(SUPPORTED_LANGUAGES, ['it', 'en']), 'Valid default language' => in_array(DEFAULT_LANGUAGE, SUPPORTED_LANGUAGES, true)];
+            foreach (['mbstring', 'fileinfo', 'gd', 'session', 'json', 'phar', 'zlib'] as $extension) $checks['PHP ' . $extension] = extension_loaded($extension);
+            foreach (['content', 'cache', 'storage', 'media'] as $directory) $checks['Writable ' . $directory] = is_dir(AP_ROOT . '/' . $directory) && is_writable(AP_ROOT . '/' . $directory);
+            $checks['Admin configured'] = isset(ap_private_read('auth')['hash']);
+            foreach ($checks as $label => $ok) { say(($ok ? 'OK   ' : 'FAIL ') . $label); if (!$ok) $failed = true; }
+            say('Check HTTP protection separately: /storage/, /content/ and /config.local.php must return 403/404.');
+            exit($failed ? 1 : 0);
+        case 'cache:clear':
+            $count = ap_lock(static function() { ap_assert_path(AP_ROOT . '/cache'); $files = glob(AP_ROOT . '/cache/posts-*.json') ?: []; foreach ($files as $file) { ap_assert_path($file); if (!unlink($file)) throw new RuntimeException('Cannot clear cached index.'); } return count($files); });
+            say('Cleared ' . $count . ' generated indexes.'); break;
+        case 'password':
+            require __DIR__ . '/bin/password.php'; break;
+        case 'backup':
+            if (!extension_loaded('phar') || !extension_loaded('zlib')) throw new RuntimeException('PHP Phar and zlib extensions are required for backups.');
+            $output = ap_lock(static function() {
+                $directory = AP_STORAGE . '/backups';
+                ap_backup_mkdir($directory);
+                $base = $directory . '/alternpress-' . gmdate('Ymd-His') . '-' . bin2hex(random_bytes(3)) . '.tar';
+                $output = $base . '.gz'; $complete = false;
+                $previousUmask = umask(0077);
+                try {
+                    $archive = new PharData($base);
+                    foreach (cli_files() as $relative => $file) {
+                        ap_backup_assert_path($file);
+                        if (!is_readable($file)) throw new RuntimeException('Unreadable backup file: ' . $relative);
+                        $archive->addFile($file, $relative);
+                    }
+                    $archive->compress(Phar::GZ); unset($archive);
+                    if (!chmod($output, 0600)) throw new RuntimeException('Cannot protect backup archive.');
+                    ap_backup_owner($output);
+                    $hash = hash_file('sha256', $output);
+                    if ($hash === false) throw new RuntimeException('Cannot hash backup archive.');
+                    ap_atomic_write($output . '.sha256', $hash . '  ' . basename($output) . "\n", 0600);
+                    $complete = true;
+                    return $output;
+                } finally {
+                    unset($archive); umask($previousUmask);
+                    if (is_file($base)) unlink($base);
+                    if (!$complete) foreach ([$output, $output . '.sha256'] as $partial) if (is_file($partial)) unlink($partial);
+                }
+            });
+            say('Backup: ' . $output); say('Contains private configuration and password hash. Keep it private.'); break;
+        case 'backup:data':
+            $backup = ap_backup_create();
+            say('Data backup: ' . ap_backup_path($backup['name']));
+            say($backup['documents'] . ' Markdown files, ' . $backup['images'] . ' photos and site settings. Restore from Settings in the dashboard.');
+            foreach ($backup['skipped'] as $path) say('Not included: ' . $path);
+            break;
+        case 'check':
+            $report = ap_diagnostics();
+            if (in_array('--json', $argv, true)) say(json_encode($report, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES | JSON_PRETTY_PRINT | JSON_THROW_ON_ERROR));
+            else {
+                foreach ($report['issues'] as $issue) say(strtoupper($issue['severity']) . ' ' . $issue['message'] . ' ' . $issue['path'] . (isset($issue['url']) ? ' → ' . $issue['url'] : ''));
+                foreach ($report['orphans'] as $photo) say('POSSIBLY UNUSED ' . $photo['path']);
+                $s = $report['summary'];
+                say($s['directories'] . ' folders · ' . $s['markdown'] . ' Markdown files · ' . $s['missing_links'] . ' missing references · ' . $s['permission_issues'] . ' permission issues · ' . $s['orphans'] . ' possibly unused photos.');
+                foreach ($report['notes'] as $note) say($note);
+                say('Run as the PHP user for meaningful permission checks. External URLs and fragments are not checked. No files were changed.');
+            }
+            exit(!$report['complete'] || $report['summary']['errors'] > 0 || $report['summary']['permission_issues'] > 0 || $report['summary']['missing_links'] > 0 ? 1 : 0);
+        case 'backup:verify':
+            $file = $argv[2] ?? '';
+            if (!is_file($file) || !is_file($file . '.sha256')) throw new RuntimeException('Provide a backup path with its .sha256 sidecar.');
+            $expected = substr(trim(file_get_contents($file . '.sha256')), 0, 64);
+            if (!hash_equals($expected, hash_file('sha256', $file))) throw new RuntimeException('Backup checksum mismatch.');
+            $archive = new PharData($file); $entries = count($archive);
+            say('Backup verified: SHA-256 matches; archive opens; ' . $entries . ' files.'); break;
+        case 'links:check':
+            $external = in_array('--external', $argv, true); $bad = 0; $checked = 0; $skipped = 0; $externalCache = [];
+            ap_backup_assert_path(AP_ROOT . '/content');
+            $iterator = new RecursiveIteratorIterator(new RecursiveDirectoryIterator(AP_ROOT . '/content', FilesystemIterator::SKIP_DOTS));
+            foreach ($iterator as $file) {
+                if ($file->isLink() || !$file->isFile() || $file->getExtension() !== 'md') continue;
+                [$meta, $body] = parse_front_matter(file_get_contents($file->getPathname()));
+                $body = preg_replace('/```.*?(?:```|\z)/s', '', $body);
+                preg_match_all('/!?\[[^\]]*\]\(([^\s)]+)(?:\s+"[^"]*")?\)/', $body, $matches);
+                $links = $matches[1]; if (!empty($meta['cover'])) $links[] = $meta['cover'];
+                foreach (array_unique($links) as $url) {
+                    if (preg_match('#^https?://#i', $url)) {
+                        if (!$external) { $skipped++; continue; }
+                        [$status, $error] = $externalCache[$url] ??= cli_external_link($url);
+                        $checked++;
+                        if ($status >= 200 && $status < 400) continue;
+                        $bad++; say(($status === 404 || $status === 410 ? 'DEAD ' : 'REVIEW ') . $url . ' [' . $status . ($error ? '; ' . $error : '') . ']');
+                    } else {
+                        $ok = cli_internal_link($url, $file->getPathname());
+                        if ($ok === null) { $skipped++; continue; }
+                        $checked++;
+                        if (!$ok) { $bad++; say('MISSING ' . $url . ' in ' . substr($file->getPathname(), strlen(AP_ROOT) + 1)); }
+                    }
+                }
+            }
+            say($checked . ' checked · ' . $bad . ' to review · ' . $skipped . ' skipped.');
+            say('Fragments are not checked. External 403/405/429 and timeouts need manual review, not automatic deletion.');
+            exit($bad ? 1 : 0);
+        default: throw new RuntimeException('Unknown command. Run ./alt-cli help.');
+    }
+} catch (Throwable $error) { fwrite(STDERR, 'Error: ' . $error->getMessage() . "\n"); exit(1); }
