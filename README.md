@@ -1,6 +1,6 @@
 # AlternPress
 
-[Italiano](README.it.md) · [Source and releases](https://github.com/VantaxDev/alternpress) · [Security](SECURITY.md)
+[Project website](https://alternpress.com/) · [Italiano](README.it.md) · [Source and releases](https://github.com/VantaxDev/alternpress) · [Security](SECURITY.md)
 
 **For those who have something to say.**
 

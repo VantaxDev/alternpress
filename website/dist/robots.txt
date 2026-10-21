@@ -1,0 +1,3 @@
+User-agent: *
+Allow: /
+Sitemap: https://alternpress.com/sitemap.xml
