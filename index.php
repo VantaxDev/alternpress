@@ -507,6 +507,8 @@ function render_layout(string $language, string $relativePath, string $title, st
     }
     $xDefaultUrl = $alternateUrls[DEFAULT_LANGUAGE]
         ?? ap_canonical_url($language, $relativePath);
+    $structuredData = ap_discovery_graph($language, $relativePath);
+    $description = ap_discovery_description($language, $relativePath, $text['site_description']);
     $secureCookie = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off');
 
     if (($_COOKIE['alternpress_lang'] ?? '') !== $language) {
@@ -524,7 +526,13 @@ function render_layout(string $language, string $relativePath, string $title, st
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title><?= h($fullTitle) ?></title>
-  <meta name="description" content="<?= h($text['site_description']) ?>">
+  <meta name="description" content="<?= h($description) ?>">
+  <?php if ($structuredData !== []): ?>
+  <script type="application/ld+json" nonce="<?= h($scriptNonce) ?>"><?= json_encode($structuredData, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES | JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT | JSON_THROW_ON_ERROR) ?></script>
+  <?php endif; ?>
+  <link rel="alternate" type="application/ld+json" href="<?= h(ap_url('/knowledge-graph.jsonld')) ?>" title="Knowledge graph">
+  <link rel="sitemap" type="application/xml" href="<?= h(ap_url('/sitemap.xml')) ?>">
+  <link rel="alternate" type="text/plain" href="<?= h(ap_url('/llms.txt')) ?>" title="LLM content index">
   <link rel="icon" href="<?= h(ap_url('/assets/favicon.svg')) ?>" type="image/svg+xml">
   <meta name="theme-color" content="#111827">
   <link rel="canonical" href="<?= h($currentUrl) ?>">
@@ -595,6 +603,8 @@ function render_layout(string $language, string $relativePath, string $title, st
 </html><?php
 }
 
+require_once __DIR__ . '/lib/discovery.php';
+
 if (defined('AP_LIBRARY') && AP_LIBRARY) return;
 
 if (($_GET['ap-css'] ?? null) === 'custom') {
@@ -609,6 +619,7 @@ if (($_GET['ap-css'] ?? null) === 'custom') {
 
 
 $path = route_path();
+ap_discovery_dispatch($path);
 
 if ($path === '/') {
     redirect_to(language_url(preferred_language()));

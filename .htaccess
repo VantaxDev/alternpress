@@ -1,5 +1,5 @@
 Options -Indexes -MultiViews
-DirectoryIndex index.php
+DirectoryIndex index.html index.php
 <FilesMatch "(?i)^(?:alt-cli|config(?:\.local)?\.php|.*\.(?:md|json|lock|log|bak|preCPT|tgz|zip|tar|gz|sql|ini|ya?ml|sh|py)|.*~)$">
     Require all denied
 </FilesMatch>
