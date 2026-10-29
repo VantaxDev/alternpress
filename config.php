@@ -9,6 +9,9 @@ return [
     'description' => ['it' => 'Un blog semplice, indipendente, tuo.', 'en' => 'A simple, independent blog of your own.'],
     'email' => '',
     'legal' => '',
+    // Public editorial identity for article structured data. Leave blank if unknown.
+    'author_name' => '',
+    'author_url' => '',
     'logo_mark' => '>_',
     'languages' => ['it', 'en'],
     'default_language' => 'it',

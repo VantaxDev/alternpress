@@ -8,8 +8,11 @@ Un blog Markdown piccolo e autosufficiente. Un unico accesso admin/editor,
 italiano e inglese, articoli e foto sul tuo server. Nessun database, Composer,
 npm, CDN, font remoto, analytics o servizio esterno.
 
-Versione **0.4.0-alpha**, licenza MIT. La [guida completa in inglese](README.md)
+Versione **0.5.0-alpha**, licenza MIT. La [guida completa in inglese](README.md)
 descrive anche struttura, permessi, ripristino e limiti del formato Markdown.
+
+JSON-LD, knowledge graph, sitemap multilingua e `llms.txt` vengono generati
+automaticamente dai contenuti pubblicati. Consulta la [guida alla lettura da parte delle AI](README-AI.md).
 
 ## Installazione
 

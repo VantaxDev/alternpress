@@ -1,5 +1,16 @@
 # Changelog
 
+## 0.5.0-alpha — 2026-10-29
+
+- Generate safe Schema.org JSON-LD on published pages and articles, with stable
+  identities linking the website, publisher, optional author and tag topics.
+- Add automatic sitemap index and language sitemaps, robots.txt, llms.txt and
+  a public knowledge-graph.jsonld endpoint. Publishing, editing and withdrawing
+  content updates discovery immediately without a build step or external API.
+- Respect draft translations, canonical subfolders and disabled search indexing.
+- Use article summaries in HTML descriptions and test discovery through PHP/HTTP.
+- Preserve static HTML directory indexes in applications sharing the site's root.
+
 ## 0.4.0-alpha — 2026-09-30
 
 - Confine file reads/writes to the installation, reject symlinks and malformed private data, and protect complete backups from creation onward.

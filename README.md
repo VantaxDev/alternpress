@@ -12,7 +12,7 @@ services. PHP, CSS and JavaScript are included. The Markdown renderer belongs to
 the project; its historical `Parsedown` class name is a compatibility name, not
 an external package.
 
-Version **0.4.0-alpha**. MIT license. [Guida in italiano](README.it.md).
+Version **0.5.0-alpha**. MIT license. [Guida in italiano](README.it.md).
 
 ## What it does
 
@@ -26,6 +26,8 @@ Version **0.4.0-alpha**. MIT license. [Guida in italiano](README.it.md).
 - Keep previous saved file versions privately under `storage/history/`.
 - Run at the domain root or under a folder without editing source code.
 - `alt-cli` for checks, password recovery, cache, backups and link checking.
+- Automatic JSON-LD, a linked knowledge graph, multilingual XML sitemaps and
+  `llms.txt` for published content. See [AI discovery](README-AI.md).
 
 ## Requirements
 

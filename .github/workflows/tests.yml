@@ -24,3 +24,4 @@ jobs:
         run: |
           for test in tests/*.php; do php "$test"; done
           python3 tests/security-http.py
+          python3 tests/discovery-http.py
