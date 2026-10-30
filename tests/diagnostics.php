@@ -57,6 +57,18 @@ try {
     diagnostic_assert(count(array_filter($report['permissions'], static fn($row) => $row['path'] === 'content/it/post/published' && $row['type'] === 'directory')) === 1, 'Permissions must include nested directories.');
     diagnostic_assert(count(array_filter($report['permissions'], static fn($row) => $row['path'] === 'content/it/post/published/local.jpg' && $row['type'] === 'file')) === 1, 'Permissions must include nested files.');
     diagnostic_assert(is_file($temp . '/media/' . $names['orphan']), 'Diagnostics must never remove orphan candidates.');
+    $discoveryLinks = ['/sitemap.xml', '/sitemap-it.xml', '/sitemap-en.xml', '/llms.txt', '/robots.txt', '/knowledge-graph.jsonld'];
+    $discoveryBody = '';
+    foreach ($discoveryLinks as $path) {
+        $discoveryBody .= "[index](/alphatest$path)\n[index](https://blog.example$path)\n";
+    }
+    diagnostic_fixture('content/it/about/index.md', $discoveryBody);
+    $discovery = ap_diagnostics($options);
+    diagnostic_assert($discovery['summary']['missing_links'] === 3, 'Generated discovery links must resolve under the installation base and canonical URL.');
+    diagnostic_assert($discovery['summary']['links_checked'] >= 12, 'Discovery links must be checked, not skipped.');
+    diagnostic_fixture('content/it/about/index.md', $discoveryBody . "[unsupported](/sitemap-fr.xml)\n[localized](/it/sitemap.xml)\n[invalid](/sitemap.xml.bak)\n");
+    $invalidDiscovery = ap_diagnostics($options);
+    diagnostic_assert($invalidDiscovery['summary']['missing_links'] === 6, 'Unsupported languages, localized discovery paths and suffix lookalikes must still fail.');
     $small = ap_diagnostics($options + ['max_files' => 2]);
     diagnostic_assert(!$small['complete'] && $small['orphans'] === [], 'Limited scans must not claim photos are orphaned.');
     if (DIRECTORY_SEPARATOR !== '\\') {

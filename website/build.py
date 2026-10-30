@@ -11,6 +11,7 @@ ZIP = REPO + '/releases/download/v' + VERSION + '/alternpress-' + VERSION + '.zi
 TAR = REPO + '/releases/download/v' + VERSION + '/alternpress-' + VERSION + '.tar.gz'
 RELEASE_SOURCE = REPO + '/blob/v' + VERSION
 DISCOVERY_GUIDE = RELEASE_SOURCE + '/README-AI.md'
+QUICKSTART = REPO + '/blob/main/QUICKSTART.md'
 
 COPY = {
     'en': {
@@ -64,6 +65,7 @@ COPY = {
         'faq': [
             ('Is it ready for everyone?', f'This is version {VERSION}: an early release for trying the project and helping improve it. Test it on your hosting and keep backups before trusting it with important work.'),
             ('Is it really free?', 'Yes. AlternPress is released under the MIT license. You can use it, study it and modify it. The code and release archives are available on GitHub.'),
+            ('Can I change the theme and favicon?', f'The latest source includes optional local theme and favicon files. Your existing look stays unchanged until you add them. See the <a href="{QUICKSTART}">short customization guide</a>; these additions are not in the 0.5.0-alpha download above.'),
             ('Does it need outside services?', 'The blog runs on your own PHP hosting. Its CSS, JavaScript and Markdown renderer are included. It does not load CDNs, remote fonts or analytics. Checking external links only contacts those links when you ask it to.'),
             ('How does HTML page caching work?', 'AlternPress caches public HTML and prepares Brotli quality 11 versions when a local encoder is available on your server. The cache refreshes when published content changes. Gzip or ordinary HTML provides a compatible fallback; Brotli is optional.'),
             ('Does it translate my posts?', 'No. You write the Italian and English versions yourself. You can publish one language first and add the other later.'),
@@ -127,6 +129,7 @@ COPY = {
         'faq': [
             ('È già pronto per tutti?', f'Questa è la versione {VERSION}: una prima release per provare il progetto e contribuire a migliorarlo. Verificala sul tuo hosting e conserva backup prima di affidarle contenuti importanti.'),
             ('È davvero gratuito?', 'Sì. AlternPress è distribuito con licenza MIT. Puoi usarlo, studiarlo e modificarlo. Il codice e gli archivi delle release sono disponibili su GitHub.'),
+            ('Posso cambiare tema e favicon?', f'Il codice più recente include file locali facoltativi per tema e favicon. Il tuo stile resta invariato finché non li aggiungi. Leggi la <a href="{QUICKSTART}">guida rapida alla personalizzazione</a>: queste novità non sono nel download 0.5.0-alpha qui sopra.'),
             ('Ha bisogno di servizi esterni?', 'Il blog funziona sul tuo hosting PHP. CSS, JavaScript e motore Markdown sono inclusi. Non carica CDN, font remoti o analytics. Il controllo dei link esterni contatta quei link solo quando lo richiedi.'),
             ('Come funziona la cache delle pagine HTML?', 'AlternPress conserva in cache le pagine HTML pubbliche e prepara versioni Brotli a qualità 11 quando sul server è disponibile un encoder locale. La cache si rinnova quando cambiano i contenuti pubblicati. Gzip o HTML normale garantiscono una risposta compatibile; Brotli è facoltativo.'),
             ('Traduce i miei articoli?', 'No. Scrivi tu la versione italiana e quella inglese. Puoi pubblicare prima una lingua e aggiungere l’altra in seguito.'),
