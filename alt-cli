@@ -125,7 +125,7 @@ try {
             say('Admin password: ' . (ap_private_read('auth') ? 'configured' : 'not configured')); break;
         case 'doctor':
             $failed = false;
-            $checks = ['PHP >= 8.2' => PHP_VERSION_ID >= 80200, 'Valid languages' => count(SUPPORTED_LANGUAGES) === 2 && !array_diff(SUPPORTED_LANGUAGES, ['it', 'en']), 'Valid default language' => in_array(DEFAULT_LANGUAGE, SUPPORTED_LANGUAGES, true)];
+            $checks = ['PHP >= 8.2' => PHP_VERSION_ID >= 80200, 'Valid languages' => ap_language_list(SUPPORTED_LANGUAGES) === SUPPORTED_LANGUAGES, 'Valid default language' => in_array(DEFAULT_LANGUAGE, SUPPORTED_LANGUAGES, true)];
             foreach (['mbstring', 'fileinfo', 'gd', 'session', 'json', 'phar', 'zlib'] as $extension) $checks['PHP ' . $extension] = extension_loaded($extension);
             foreach (['content', 'cache', 'storage', 'media'] as $directory) $checks['Writable ' . $directory] = is_dir(AP_ROOT . '/' . $directory) && is_writable(AP_ROOT . '/' . $directory);
             $checks['Admin configured'] = isset(ap_private_read('auth')['hash']);

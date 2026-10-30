@@ -90,6 +90,7 @@ function ap_input_string(array $input, string $key, string $default = ''): strin
 function ap_validate_document_input(array $input): void {
     foreach (['id', 'kind', 'date'] as $key) ap_input_string($input, $key);
     if (!is_array($input['translation'] ?? null)) throw new RuntimeException('Invalid translation.');
+    if (array_diff(array_keys($input['translation']), SUPPORTED_LANGUAGES)) throw new RuntimeException('Unsupported content language.');
     foreach (SUPPORTED_LANGUAGES as $language) {
         $fields = $input['translation'][$language] ?? [];
         if (!is_array($fields)) throw new RuntimeException('Invalid translation.');

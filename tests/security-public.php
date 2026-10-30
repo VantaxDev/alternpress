@@ -6,7 +6,7 @@ $source = dirname(__DIR__);
 $fixture = sys_get_temp_dir() . '/alternpress-public-security-' . bin2hex(random_bytes(6));
 mkdir($fixture, 0700);
 foreach (['lib', 'cache', 'storage', 'media', 'content/it/home', 'content/en/home', 'content/it/post/published', 'content/it/post/draft'] as $directory) mkdir($fixture . '/' . $directory, 0700, true);
-foreach (['index.php', 'config.php', 'lib/bootstrap.php', 'lib/Parsedown.php', 'lib/discovery.php', 'lib/page-cache.php'] as $file) copy($source . '/' . $file, $fixture . '/' . $file);
+foreach (['index.php', 'config.php', 'lib/bootstrap.php', 'lib/languages.php', 'lib/Parsedown.php', 'lib/discovery.php', 'lib/page-cache.php'] as $file) copy($source . '/' . $file, $fixture . '/' . $file);
 define('AP_LIBRARY', true);
 require $fixture . '/index.php';
 $checks = 0;

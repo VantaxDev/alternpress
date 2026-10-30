@@ -6,7 +6,8 @@
 
 **For those who have something to say.**
 
-A small, self-contained Markdown blog. One admin/editor. Italian and English.
+A small, self-contained Markdown blog. One admin/editor. Configurable languages
+(Italian and English by default). See [the short language guide](LANGUAGES.md).
 Your articles are ordinary files. Your photographs stay on your server.
 
 No database. No Composer. No npm. No CDN, remote fonts, analytics or third-party
@@ -19,11 +20,11 @@ Version **0.5.0-alpha**. MIT license. [Guida in italiano](README.it.md).
 ## What it does
 
 - Password-protected editor with one shared admin identity, no user roles.
-- Independent Italian/English translations and publication states.
+- Independent translations and publication states for configured languages.
 - Markdown toolbar, preview, title, summary, tags and cover photo.
 - Drafts remain inaccessible through public routes and archives.
 - Upload JPEG, PNG or WebP; validate, resize, re-encode and strip metadata.
-- Edit Home, Skills and About pages in both languages.
+- Edit Home, Skills and About pages in each configured language.
 - Prevent silent overwrites when two tabs edit the same article.
 - Keep previous saved file versions privately under `storage/history/`.
 - Run at the domain root or under a folder without editing source code.
@@ -86,7 +87,7 @@ these overrides, apply those limits in the host's PHP configuration instead.
 ## Site settings
 
 Open **Settings** in the admin to edit the site name, logo symbol, descriptions
-in both languages, default language, article count, public URL, search indexing,
+in configured languages, default language, article count, public URL, search indexing,
 footer texts, legal credits, contact email and custom CSS. Save once to apply all
 changes. A blank public URL preserves automatic domain/folder detection; an
 explicit URL, including any subfolder, changes canonical and alternate addresses
@@ -116,6 +117,7 @@ return [
     'description' => ['it' => 'Il mio blog.', 'en' => 'My blog.'],
     'email' => '',
     'legal' => '',
+    'languages' => ['it', 'en'],
     'default_language' => 'it',
     'origin' => '',
     'base_path' => null,
@@ -127,8 +129,9 @@ Keep `origin` empty and `base_path` null for automatic domain/folder detection.
 To enforce a canonical domain, set `origin` to the scheme and hostname only,
 without a trailing folder. If deploying behind a proxy, set `origin` explicitly
 and configure the web server's HTTPS indication; proxy headers are not blindly
-trusted. `languages` supports the IT/EN pair. `default_language` controls fallback
-for the visitor. Labels, SEO descriptions, email, legal text, navigation,
+trusted. `languages` is the single enabled-language list; add `de` or use one
+language as described in [LANGUAGES.md](LANGUAGES.md). `default_language` controls
+visitor fallback. Labels, SEO descriptions, email, legal text, navigation,
 timezone and photo limits are configurable.
 
 For a test installation set `search_indexing` to false; set it to true on the
@@ -141,7 +144,7 @@ Open **Articles → New article**. Choose a permanent slug, such as
 `2026-09-29-a-good-idea`. The date is separate: several articles can share a date.
 An existing date-only slug continues to work.
 
-Use the Italiano/English tabs. A translation can be empty until you need it.
+Use the configured language tabs. A translation can be empty until you need it.
 Each translation has its own Draft/Published setting. Saving a published
 translation updates it immediately; a future editorial date does not schedule
 publication. Switch it back to Draft to remove it from public view.
@@ -302,7 +305,7 @@ permissions. The complete CLI `backup` command remains available separately.
 
 **Settings → Check → Check site** checks folders/subfolders and effective PHP
 read, write and traversal permissions, local Markdown links, missing images and
-possibly unused photographs. Both languages, pages, covers, drafts, legacy post
+possibly unused photographs. Configured languages, pages, covers, drafts, legacy post
 images and CSS references are included. Findings show affected paths. This
 read-only operation does not change permissions or delete photos. A photograph
 may still be used elsewhere; review every candidate yourself. Incomplete scans
@@ -365,7 +368,7 @@ private articles. The example content in the clean release is generic.
 
 `php tests/run.php` runs focused Markdown and path regression checks.
 The alpha was also exercised through HTTP for authentication, CSRF, private
-paths, draft visibility, bilingual publication, uploads, conflicts and relocation.
+paths, draft visibility, multilingual publication, uploads, conflicts and relocation.
 
 ## Security regression checks
 
