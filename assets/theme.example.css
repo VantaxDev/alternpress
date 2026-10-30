@@ -1,0 +1,37 @@
+/* Copy to theme.css. Loaded after site.css, before Settings > Custom CSS.
+   Hatamoto-inspired: neutral surfaces, warm accent, restrained decoration.
+   System fonts only; no scripts, imports or remote assets. */
+:root {
+  --pico-primary: #bd351c;
+  --pico-primary-hover: #9f2b16;
+  --pico-color: #18181b;
+  --pico-background-color: #fff;
+  --pico-card-background-color: #fff;
+  --surface-soft: #f7f7f8;
+  --line-soft: #e4e4e7;
+  --text-soft: #62626b;
+}
+body { background: var(--pico-background-color); }
+.site-header { position: static; background: var(--pico-background-color); backdrop-filter: none; }
+.logo-mark { background: transparent; color: var(--pico-primary); }
+.hero, .card, .prose-home blockquote {
+  background: var(--pico-card-background-color);
+  box-shadow: none;
+  border-radius: 12px;
+}
+.hero::before { display: none; }
+.prose-home h2:nth-of-type(1) { padding: 0; border: 0; background: none; }
+.grid.cards { grid-template-columns: repeat(auto-fit, minmax(min(100%, 280px), 1fr)); }
+@media (prefers-color-scheme: dark) {
+  :root {
+    --pico-primary: #ff987e;
+    --pico-primary-hover: #ffb5a3;
+    --pico-color: #ededee;
+    --pico-background-color: #18181b;
+    --pico-card-background-color: #18181b;
+    --surface-soft: #27272a;
+    --line-soft: #3f3f46;
+    --text-soft: #b0b0b8;
+  }
+}
+@media (prefers-reduced-motion: reduce) { html { scroll-behavior: auto; } }

@@ -494,6 +494,14 @@ function ap_public_language_cookie(string $language): void
     }
 }
 
+/** Owner-supplied assets stay local; content hashes refresh browser caches. */
+function public_asset_url(string $path): string
+{
+    $file = __DIR__ . $path;
+    $hash = public_path_ok($file) ? hash_file('sha256', $file) : false;
+    return ap_url($path) . ($hash ? '?v=' . substr($hash, 0, 16) : '');
+}
+
 function render_layout(string $language, string $relativePath, string $title, string $contentHtml): void
 {
     global $CONTENT_ROOT;
@@ -522,9 +530,10 @@ function render_layout(string $language, string $relativePath, string $title, st
     // has its own CSP hash; content supplied by authors never adds style permissions.
     $initialPageStyle = 'html{color-scheme:light;background-color:#fff;color:#1e293b}@media(prefers-color-scheme:dark){html{color-scheme:dark;background-color:#0e1523;color:#e2e8f0}}';
     $initialStyleHash = "'sha256-" . base64_encode(hash('sha256', $initialPageStyle, true)) . "'";
-    $siteCssFile = __DIR__ . '/assets/site.css';
-    $siteCssHash = public_path_ok($siteCssFile) ? hash_file('sha256', $siteCssFile) : false;
-    $siteCssUrl = ap_url('/assets/site.css') . ($siteCssHash ? '?v=' . substr($siteCssHash, 0, 16) : '');
+    $siteCssUrl = public_asset_url('/assets/site.css');
+    $themeCss = public_path_ok(__DIR__ . '/assets/theme.css');
+    $favicon = public_path_ok(__DIR__ . '/assets/favicon.local.svg')
+        ? '/assets/favicon.local.svg' : '/assets/favicon.svg';
     ap_public_language_cookie($language);
     ob_start();
 ?><!doctype html>
@@ -537,8 +546,11 @@ function render_layout(string $language, string $relativePath, string $title, st
   <meta name="theme-color" content="#ffffff" media="(prefers-color-scheme: light)">
   <meta name="theme-color" content="#0e1523" media="(prefers-color-scheme: dark)">
   <title><?= h($fullTitle) ?></title>
-  <link rel="stylesheet" href="<?= h(ap_url('/assets/base.css')) ?>">
+  <link rel="stylesheet" href="<?= h(public_asset_url('/assets/base.css')) ?>">
   <link rel="stylesheet" href="<?= h($siteCssUrl) ?>">
+  <?php if ($themeCss): ?>
+  <link rel="stylesheet" href="<?= h(public_asset_url('/assets/theme.css')) ?>">
+  <?php endif; ?>
   <?php if (ap_config('custom_css') !== ''): ?>
   <link rel="stylesheet" href="<?= h(ap_url('/index.php') . '?ap-css=custom&v=' . substr(hash('sha256', (string) ap_config('custom_css')), 0, 16)) ?>">
   <?php endif; ?>
@@ -549,7 +561,7 @@ function render_layout(string $language, string $relativePath, string $title, st
   <link rel="alternate" type="application/ld+json" href="<?= h(ap_url('/knowledge-graph.jsonld')) ?>" title="Knowledge graph">
   <link rel="sitemap" type="application/xml" href="<?= h(ap_url('/sitemap.xml')) ?>">
   <link rel="alternate" type="text/plain" href="<?= h(ap_url('/llms.txt')) ?>" title="LLM content index">
-  <link rel="icon" href="<?= h(ap_url('/assets/favicon.svg')) ?>" type="image/svg+xml">
+  <link rel="icon" href="<?= h(public_asset_url($favicon)) ?>" type="image/svg+xml">
   <link rel="canonical" href="<?= h($currentUrl) ?>">
   <?php foreach ($alternateUrls as $alternateLanguage => $alternateUrl): ?>
   <link rel="alternate" hreflang="<?= h($alternateLanguage) ?>" href="<?= h($alternateUrl) ?>">
