@@ -61,7 +61,7 @@ function ap_page_cache_fingerprint(): ?string {
         hash_update($context, json_encode($encoder, JSON_THROW_ON_ERROR));
         $paths = [];
         foreach (SUPPORTED_LANGUAGES as $language) {
-            if (!is_string($language) || !preg_match('/\A[a-z]{2}(?:-[A-Za-z]{2,8})?\z/D', $language)) return null;
+            if (!ap_language_code_valid($language)) return null;
             $root = $CONTENT_ROOT . '/' . $language;
             foreach (['home', 'skills', 'about'] as $page) $paths[] = $root . '/' . $page . '/index.md';
             // Directory presence also affects empty archives and language navigation.

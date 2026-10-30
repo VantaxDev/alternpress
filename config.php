@@ -13,7 +13,7 @@ return [
     'author_name' => '',
     'author_url' => '',
     'logo_mark' => '>_',
-    'languages' => ['it', 'en'],
+    'languages' => ['it', 'en'], // One list controls routes, editor, indexes and cache.
     'default_language' => 'it',
     'timezone' => 'Europe/Rome',
     // Leave empty/null to work unchanged at / or in any subdirectory.

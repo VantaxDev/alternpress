@@ -20,8 +20,7 @@ function ap_discovery_text(mixed $value, int $limit = 500): string {
 }
 
 function ap_discovery_languages(): array {
-    return array_values(array_filter(SUPPORTED_LANGUAGES, static fn($language): bool =>
-        is_string($language) && preg_match('/\A[a-z]{2}(?:-[A-Za-z]{2,8})?\z/D', $language) === 1));
+    return SUPPORTED_LANGUAGES;
 }
 
 function ap_discovery_enabled(): bool { return (bool) ap_config('search_indexing'); }
@@ -287,7 +286,7 @@ function ap_discovery_dispatch(string $path): void {
     $type = null;
     $body = null;
     if ($path === '/sitemap.xml') { $type = 'application/xml'; $body = ap_discovery_sitemap_index(); }
-    elseif (preg_match('~\A/sitemap-([a-z]{2}(?:-[A-Za-z]{2,8})?)\.xml\z~D', $path, $match) && in_array($match[1], ap_discovery_languages(), true)) { $type = 'application/xml'; $body = ap_discovery_sitemap($match[1]); }
+    elseif (preg_match('~\A/sitemap-([^/]+)\.xml\z~D', $path, $match) && in_array($match[1], ap_discovery_languages(), true)) { $type = 'application/xml'; $body = ap_discovery_sitemap($match[1]); }
     elseif ($path === '/llms.txt') { $type = 'text/plain'; $body = ap_discovery_llms(); }
     elseif ($path === '/robots.txt') { $type = 'text/plain'; $body = ap_discovery_robots(); }
     elseif ($path === '/knowledge-graph.jsonld') { $type = 'application/ld+json'; $body = json_encode(ap_discovery_knowledge_graph(), JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES | JSON_THROW_ON_ERROR); }

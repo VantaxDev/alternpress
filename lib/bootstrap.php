@@ -13,19 +13,35 @@ if (PHP_SAPI !== 'cli') {
 define('AP_ROOT', dirname(__DIR__));
 define('AP_STORAGE', AP_ROOT . '/storage');
 const AP_EDITABLE_SETTINGS = ['name', 'logo_mark', 'email', 'legal', 'tagline', 'description', 'default_language', 'posts_per_page', 'search_indexing', 'site_url', 'custom_css'];
-ap_assert_path(AP_ROOT . '/config.php');
-$AP_CONFIG = require AP_ROOT . '/config.php';
-ap_assert_path(AP_ROOT . '/config.local.php');
-if (is_file(AP_ROOT . '/config.local.php')) {
-    $AP_CONFIG = array_replace($AP_CONFIG, require AP_ROOT . '/config.local.php');
-}
-$AP_CONFIG = array_replace($AP_CONFIG, array_intersect_key(ap_private_read('settings')['values'] ?? [], array_flip(AP_EDITABLE_SETTINGS)));
+require_once __DIR__ . '/languages.php';
+$AP_CONFIG = ap_site_configuration();
 date_default_timezone_set($AP_CONFIG['timezone']);
 define('SUPPORTED_LANGUAGES', $AP_CONFIG['languages']);
 define('DEFAULT_LANGUAGE', $AP_CONFIG['default_language']);
 define('SITE_ORIGIN', ap_origin());
 
 function ap_config(string $key): mixed { global $AP_CONFIG; return $AP_CONFIG[$key] ?? null; }
+/** Read again for backup previews too; stale settings cannot re-enable a removed language. */
+function ap_site_configuration(): array {
+    ap_assert_path(AP_ROOT . '/config.php');
+    ap_assert_path(AP_ROOT . '/config.local.php');
+    $base = require AP_ROOT . '/config.php';
+    $local = is_file(AP_ROOT . '/config.local.php') ? require AP_ROOT . '/config.local.php' : [];
+    if (!is_array($base) || !is_array($local)) throw new RuntimeException('Site config must return an array.');
+    $file = array_replace($base, $local);
+    $languages = ap_language_list($file['languages'] ?? null);
+    if (!in_array($file['default_language'] ?? null, $languages, true)) throw new RuntimeException('Configured default_language must belong to languages.');
+    $saved = array_intersect_key(ap_private_read('settings')['values'] ?? [], array_flip(AP_EDITABLE_SETTINGS));
+    if (array_key_exists('default_language', $local) || !in_array($saved['default_language'] ?? null, $languages, true)) unset($saved['default_language']);
+    $config = array_replace($file, $saved);
+    $config['default_language_locked'] = array_key_exists('default_language', $local);
+    foreach (['description', 'tagline'] as $key) {
+        if (!is_array($config[$key] ?? null)) throw new RuntimeException('Localized site text must be an array.');
+        foreach ($config[$key] as $language => $text) if (!ap_language_code_valid($language) || !is_string($text)) throw new RuntimeException('Invalid localized site text.');
+        foreach ($languages as $language) $config[$key][$language] ??= '';
+    }
+    return $config;
+}
 function ap_base(): string {
     if (ap_config('base_path') !== null) return rtrim((string) ap_config('base_path'), '/');
     if (PHP_SAPI === 'cli' && defined('AP_CACHE_WARM') && AP_CACHE_WARM && defined('AP_CACHE_BASE_PATH')) return AP_CACHE_BASE_PATH;

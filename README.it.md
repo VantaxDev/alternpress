@@ -2,12 +2,14 @@
 
 [Theme, favicon, cache & compression — quick guide / Guida rapida](QUICKSTART.md)
 
+[Lingue configurabili: en, it, de o una sola lingua](LANGUAGES.md)
+
 [Sito del progetto](https://alternpress.com/it/) · [English](README.md) · [Codice e release](https://github.com/VantaxDev/alternpress) · [Sicurezza](SECURITY.md)
 
 **Solo per chi ha qualcosa da dire.**
 
 Un blog Markdown piccolo e autosufficiente. Un unico accesso admin/editor,
-italiano e inglese, articoli e foto sul tuo server. Nessun database, Composer,
+lingue configurabili (italiano e inglese di default), articoli e foto sul tuo server. Nessun database, Composer,
 npm, CDN, font remoto, analytics o servizio esterno.
 
 Versione **0.5.0-alpha**, licenza MIT. La [guida completa in inglese](README.md)
@@ -162,8 +164,8 @@ hash; nessuna password in chiaro è salvata nella configurazione.
 ## Configurazione e trasferimento
 
 Dal pannello **Impostazioni** puoi modificare nome, simbolo del logo, descrizioni
-IT/EN, lingua predefinita, numero di articoli in home, URL pubblico,
-indicizzazione, footer nelle due lingue, dati legali, email e CSS personalizzato.
+nelle lingue configurate, lingua predefinita, numero di articoli in home, URL pubblico,
+indicizzazione, footer localizzati, dati legali, email e CSS personalizzato.
 **Salva impostazioni** applica tutte le modifiche insieme.
 
 Lascia vuoto l’URL pubblico per riconoscere automaticamente dominio e cartella.
@@ -181,7 +183,7 @@ Le versioni precedenti restano in `storage/history/`. Per tornare a tutte le
 impostazioni dei file, fai una copia di `storage/settings.php` e rimuovilo via SSH.
 
 `config.php` contiene i valori di base; **`config.local.php`** contiene i tuoi:
-nome, descrizioni IT/EN, contatti, testo legale, lingua iniziale, navigazione,
+nome, descrizioni localizzate, contatti, testo legale, lingua iniziale, navigazione,
 fuso orario, limiti delle foto. Le lingue supportate sono italiano e inglese.
 
 Lascia `origin` vuoto e `base_path` a `null`: dominio e sottocartella si adattano
@@ -203,7 +205,7 @@ presenti soltanto nella destinazione.
 ## Backup, ripristino e Check dal pannello
 
 In **Impostazioni → Backup / restore**, premi **Crea backup** e poi **Scarica**.
-Il backup dati contiene tutti i Markdown IT/EN, le immagini JPG/JPEG/PNG/WebP/GIF
+Il backup dati contiene tutti i Markdown anche delle lingue disabilitate, le immagini JPG/JPEG/PNG/WebP/GIF
 nelle cartelle dei contenuti e dei media, e le impostazioni del sito (CSS e footer
 compresi). Eventuali file di altri formati sono elencati come esclusi. Conserva
 una copia anche fuori dal server: l’archivio può contenere bozze e dati personali.
@@ -228,7 +230,7 @@ per il recupero manuale. I backup salvati non vengono eliminati automaticamente.
 **Check → Controlla il sito** verifica lettura, scrittura e accesso a cartelle e
 sottocartelle con l’utente PHP effettivo. Controlla i collegamenti locali nei
 Markdown, le copertine, le immagini e le possibili foto orfane, includendo bozze,
-pagine, entrambe le lingue e riferimenti nei CSS. Mostra i percorsi da esaminare;
+pagine, lingue configurate e riferimenti nei CSS. Mostra i percorsi da esaminare;
 non corregge permessi e non elimina foto. Una foto senza riferimenti rilevati
 può comunque essere usata altrove. Le scansioni incomplete sono indicate e non
 producono un elenco di orfani. I link esterni non vengono interrogati dal

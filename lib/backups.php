@@ -29,7 +29,7 @@ function ap_backup_kind(string $path): ?string {
     if (!ap_backup_safe_path($path)) return null;
     $parts = explode('/', $path);
     $extension = strtolower(pathinfo($path, PATHINFO_EXTENSION));
-    if ($parts[0] === 'content' && count($parts) >= 3 && in_array($parts[1], SUPPORTED_LANGUAGES, true)) {
+    if ($parts[0] === 'content' && count($parts) >= 3 && ap_language_code_valid($parts[1])) {
         if ($extension === 'md') return 'document';
         if (in_array($extension, ['jpg', 'jpeg', 'png', 'webp', 'gif'], true)) return 'image';
     }
@@ -68,7 +68,7 @@ function ap_backup_mkdir(string $path, int $mode = 0700): void {
 function ap_backup_settings(array $values): array {
     if (array_diff(array_keys($values), AP_EDITABLE_SETTINGS) || array_diff(AP_EDITABLE_SETTINGS, array_keys($values))) throw new RuntimeException('Invalid backup settings schema.');
     $result = [];
-    foreach (['name' => 120, 'logo_mark' => 12, 'email' => 254, 'legal' => 1000, 'site_url' => 500, 'default_language' => 2] as $key => $limit) {
+    foreach (['name' => 120, 'logo_mark' => 12, 'email' => 254, 'legal' => 1000, 'site_url' => 500, 'default_language' => 35] as $key => $limit) {
         if (!is_string($values[$key]) || !mb_check_encoding($values[$key], 'UTF-8')) throw new RuntimeException('Invalid backup setting: ' . $key);
         $result[$key] = ap_clean_line($values[$key], $limit);
     }
@@ -82,11 +82,12 @@ function ap_backup_settings(array $values): array {
     $result['posts_per_page'] = $values['posts_per_page'];
     $result['search_indexing'] = $values['search_indexing'];
     foreach (['description' => 500, 'tagline' => 1000] as $key => $limit) {
-        if (!is_array($values[$key]) || array_diff(array_keys($values[$key]), SUPPORTED_LANGUAGES)) throw new RuntimeException('Invalid backup language settings.');
-        foreach (SUPPORTED_LANGUAGES as $language) {
-            if (!is_string($values[$key][$language] ?? null) || !mb_check_encoding($values[$key][$language], 'UTF-8')) throw new RuntimeException('Missing backup language setting.');
-            $result[$key][$language] = ap_clean_line($values[$key][$language], $limit);
+        if (!is_array($values[$key])) throw new RuntimeException('Invalid backup language settings.');
+        foreach ($values[$key] as $language => $text) {
+            if (!ap_language_code_valid($language) || !is_string($text) || !mb_check_encoding($text, 'UTF-8')) throw new RuntimeException('Invalid backup language setting.');
+            $result[$key][$language] = ap_clean_line($text, $limit);
         }
+        foreach (SUPPORTED_LANGUAGES as $language) $result[$key][$language] ??= '';
     }
     if (!is_string($values['custom_css'])) throw new RuntimeException('Invalid backup CSS.');
     $result['custom_css'] = ap_validate_css($values['custom_css']);
@@ -95,9 +96,7 @@ function ap_backup_settings(array $values): array {
 function ap_backup_effective_settings(): array {
     // Re-read disk: a preview must notice another request changing settings.
     ap_backup_assert_path(AP_STORAGE . '/settings.php');
-    $config = require AP_ROOT . '/config.php';
-    if (is_file(AP_ROOT . '/config.local.php')) $config = array_replace($config, require AP_ROOT . '/config.local.php');
-    $config = array_replace($config, ap_private_read('settings')['values'] ?? []);
+    $config = ap_site_configuration();
     return ap_backup_settings(array_intersect_key($config, array_flip(AP_EDITABLE_SETTINGS)));
 }
 function ap_backup_snapshot(): array {

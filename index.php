@@ -235,21 +235,35 @@ function route_path(): string
 
 function preferred_language(): string
 {
-    $cookieLanguage = is_string($_COOKIE['alternpress_lang'] ?? null) ? strtolower($_COOKIE['alternpress_lang']) : '';
-    if (in_array($cookieLanguage, SUPPORTED_LANGUAGES, true)) {
-        return $cookieLanguage;
+    global $CONTENT_ROOT;
+    $available = array_values(array_filter(SUPPORTED_LANGUAGES, static fn($language) => route_content_exists($CONTENT_ROOT, $language, '/')));
+    $fallback = in_array(DEFAULT_LANGUAGE, $available, true) ? DEFAULT_LANGUAGE : ($available[0] ?? DEFAULT_LANGUAGE);
+    $match = static function(string $tag) use ($available): ?string {
+        foreach ($available as $language) if (strcasecmp($tag, $language) === 0) return $language;
+        $primary = explode('-', $tag, 2)[0];
+        foreach ($available as $language) if (strcasecmp($primary, $language) === 0) return $language;
+        return null;
+    };
+    $cookieLanguage = is_string($_COOKIE['alternpress_lang'] ?? null) ? $_COOKIE['alternpress_lang'] : '';
+    if (($selected = $match($cookieLanguage)) !== null) {
+        return $selected;
     }
 
     $header = substr((string) ($_SERVER['HTTP_ACCEPT_LANGUAGE'] ?? ''), 0, 4096);
-    foreach (explode(',', $header) as $candidate) {
-        $languageTag = strtolower(trim(explode(';', $candidate, 2)[0]));
-        $primary = explode('-', $languageTag, 2)[0];
-        if (in_array($primary, SUPPORTED_LANGUAGES, true)) {
-            return $primary;
-        }
+    $preferences = [];
+    foreach (array_slice(explode(',', $header), 0, 32) as $order => $candidate) {
+        $parts = explode(';', $candidate);
+        $tag = trim(array_shift($parts)); $quality = 1.0;
+        foreach ($parts as $parameter) if (preg_match('/^\s*q\s*=(.*)$/i', $parameter, $value)) $quality = preg_match('/\A(?:0(?:\.\d{1,3})?|1(?:\.0{1,3})?)\z/D', trim($value[1])) ? (float) trim($value[1]) : 0.0;
+        if ($quality > 0) $preferences[] = ['tag' => $tag, 'q' => $quality, 'order' => $order];
+    }
+    usort($preferences, static fn($a, $b) => ($b['q'] <=> $a['q']) ?: ($a['order'] <=> $b['order']));
+    foreach ($preferences as $preference) {
+        if ($preference['tag'] === '*') return $fallback;
+        if (($selected = $match($preference['tag'])) !== null) return $selected;
     }
 
-    return DEFAULT_LANGUAGE;
+    return $fallback;
 }
 
 function redirect_to(string $location, int $status = 302): never
@@ -260,6 +274,7 @@ function redirect_to(string $location, int $status = 302): never
 
 function language_url(string $language, string $relativePath = '/'): string
 {
+    if (!in_array($language, SUPPORTED_LANGUAGES, true)) throw new InvalidArgumentException('Disabled or invalid language.');
     $relativePath = '/' . ltrim($relativePath, '/');
     if ($relativePath !== '/') {
         $relativePath = rtrim($relativePath, '/');
@@ -280,6 +295,7 @@ function split_language_route(string $path): array
 
 function route_content_exists(string $contentRoot, string $language, string $relativePath): bool
 {
+    if (!in_array($language, SUPPORTED_LANGUAGES, true)) return false;
     $contentDir = rtrim($contentRoot, '/\\') . '/' . $language;
     if (!public_path_ok($contentDir, true)) {
         return false;
@@ -294,7 +310,7 @@ function route_content_exists(string $contentRoot, string $language, string $rel
     }
 
     if ($relativePath === '/archive' || $relativePath === '/tags') {
-        return public_path_ok($contentDir . '/post', true);
+        return true; // Generated collections also exist before the first post.
     }
 
     if (preg_match('#^/post/([a-z0-9]+(?:-[a-z0-9]+)*)$#', $relativePath, $match)) {
@@ -451,7 +467,7 @@ function labels(string $language): array
         ],
     ];
 
-    $text = $translations[$language] ?? $translations[DEFAULT_LANGUAGE];
+    $text = $translations[$language] ?? $translations['en'];
     $text['site_description'] = ap_config('description')[$language] ?? '';
     $text['footer'] = ap_config('tagline')[$language] ?? '';
     $text['technical_articles'] = $language === 'it' ? 'Articoli' : 'Articles';
@@ -511,19 +527,13 @@ function render_layout(string $language, string $relativePath, string $title, st
     $siteTitle = ap_config('name');
     $fullTitle = $title ? ($title . ' · ' . $siteTitle) : $siteTitle;
     $currentUrl = ap_canonical_url($language, $relativePath);
-    $otherLanguage = $language === 'it' ? 'en' : 'it';
-    $otherRelativePath = route_content_exists($CONTENT_ROOT, $otherLanguage, $relativePath)
-        ? $relativePath
-        : '/';
-    $otherUrl = language_url($otherLanguage, $otherRelativePath);
     $alternateUrls = [];
     foreach (SUPPORTED_LANGUAGES as $alternateLanguage) {
         if (route_content_exists($CONTENT_ROOT, $alternateLanguage, $relativePath)) {
             $alternateUrls[$alternateLanguage] = ap_canonical_url($alternateLanguage, $relativePath);
         }
     }
-    $xDefaultUrl = $alternateUrls[DEFAULT_LANGUAGE]
-        ?? ap_canonical_url($language, $relativePath);
+    $xDefaultUrl = $alternateUrls[DEFAULT_LANGUAGE] ?? ($alternateUrls[$language] ?? null);
     $structuredData = ap_discovery_graph($language, $relativePath);
     $description = ap_discovery_description($language, $relativePath, $text['site_description']);
     // Establish an opaque canvas before external styles arrive. This trusted literal
@@ -566,28 +576,29 @@ function render_layout(string $language, string $relativePath, string $title, st
   <?php foreach ($alternateUrls as $alternateLanguage => $alternateUrl): ?>
   <link rel="alternate" hreflang="<?= h($alternateLanguage) ?>" href="<?= h($alternateUrl) ?>">
   <?php endforeach; ?>
-  <link rel="alternate" hreflang="x-default" href="<?= h($xDefaultUrl) ?>">
+  <?php if ($xDefaultUrl !== null): ?><link rel="alternate" hreflang="x-default" href="<?= h($xDefaultUrl) ?>"><?php endif; ?>
 </head>
 <body>
 <header class="site-header">
   <div class="container header-inner">
-    <a href="<?= h(language_url($language)) ?>" class="logo" aria-label="<?= h($siteTitle) ?> · <?= h($text['home']) ?>">
+    <a<?= route_content_exists($CONTENT_ROOT, $language, '/') ? ' href="' . h(language_url($language)) . '"' : '' ?> class="logo" aria-label="<?= h($siteTitle) ?> · <?= h($text['home']) ?>">
       <span class="logo-mark"><?= h(ap_config('logo_mark')) ?></span>
       <span class="logo-text"><?= h($siteTitle) ?></span>
     </a>
 
     <div class="header-actions">
       <nav class="main-nav" aria-label="<?= h($text['main_navigation']) ?>">
-        <?php foreach (ap_config('navigation') as $target => $label): ?>
+        <?php foreach (ap_config('navigation') as $target => $label): if (!route_content_exists($CONTENT_ROOT, $language, $target)) continue; ?>
         <a href="<?= h(language_url($language, $target)) ?>"<?= nav_active($relativePath, $target) ?>><?= h($text[$label] ?? $label) ?></a>
         <?php endforeach; ?>
       </nav>
 
-      <nav class="language-switch" aria-label="<?= h($text['language_navigation']) ?>">
-        <a href="<?= h($language === 'en' ? language_url('en', $relativePath) : $otherUrl) ?>" lang="en"<?= $language === 'en' ? ' aria-current="page" class="active"' : '' ?>>EN</a>
-        <span aria-hidden="true">/</span>
-        <a href="<?= h($language === 'it' ? language_url('it', $relativePath) : $otherUrl) ?>" lang="it"<?= $language === 'it' ? ' aria-current="page" class="active"' : '' ?>>IT</a>
+      <?php if (count($alternateUrls) > 1): ?><nav class="language-switch" aria-label="<?= h($text['language_navigation']) ?>">
+        <?php foreach ($alternateUrls as $alternateLanguage => $_): ?>
+        <a href="<?= h(language_url($alternateLanguage, $relativePath)) ?>" lang="<?= h($alternateLanguage) ?>"<?= $language === $alternateLanguage ? ' aria-current="page" class="active"' : '' ?>><?= h(strtoupper($alternateLanguage)) ?></a>
+        <?php endforeach; ?>
       </nav>
+      <?php endif; ?>
     </div>
   </div>
 </header>
@@ -666,14 +677,16 @@ if ($path === '/') {
 [$language, $relativePath] = split_language_route($path);
 
 if ($language === '') {
-    // Backward-compatible redirects for links from the previous monolingual site.
-    redirect_to(language_url(DEFAULT_LANGUAGE, $relativePath), 301);
+    // Only actual legacy unprefixed routes redirect. Disabled/unknown language
+    // prefixes must return 404 directly, not fabricate a default-language URL.
+    if (route_content_exists($CONTENT_ROOT, DEFAULT_LANGUAGE, $relativePath)) redirect_to(language_url(DEFAULT_LANGUAGE, $relativePath), 301);
+    http_response_code(404); exit('404 Not Found');
 }
 
 $contentDir = $CONTENT_ROOT . '/' . $language;
 if (!public_path_ok($contentDir, true)) {
-    http_response_code(500);
-    echo 'Missing language content directory.';
+    http_response_code(404);
+    echo '404 Not Found';
     exit;
 }
 

@@ -14,8 +14,8 @@ These addresses are relative to the installation directory. An installation at
 | --- | --- |
 | Article HTML | Embedded Schema.org JSON-LD describing the article and its relationships. |
 | `/knowledge-graph.jsonld` | JSON-LD graph connecting the site, its published articles and their topics. |
-| `/sitemap.xml` | Sitemap index linking the Italian and English sitemaps. |
-| `/sitemap-it.xml`, `/sitemap-en.xml` | Canonical public pages and articles, including links to published translations. |
+| `/sitemap.xml` | Sitemap index linking the configured language sitemaps. |
+| `/sitemap-<language>.xml` | Canonical public pages and articles, including links to published translations (`it`/`en` by default). |
 | `/llms.txt` | Markdown directory of public content for tools that support this convention. |
 | `/robots.txt` | Crawler instructions and the sitemap address. |
 
@@ -27,6 +27,7 @@ the graph or created a public knowledge panel.
 ## Publishing workflow
 
 Write a title, summary and relevant tags, then publish the article in the editor.
+Languages come from the single configured list; see [LANGUAGES.md](LANGUAGES.md).
 Each translation has its own publication state. Publishing, editing, deleting or
 returning a translation to Draft is reflected when the discovery resources are
 next requested. Translations are linked only when the corresponding public
