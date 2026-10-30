@@ -480,14 +480,23 @@ function nav_active(string $relativePath, string $target): string
     return '';
 }
 
+function ap_public_language_cookie(string $language): void
+{
+    if (PHP_SAPI === 'cli' || !in_array($language, SUPPORTED_LANGUAGES, true)) return;
+    if (($_COOKIE['alternpress_lang'] ?? '') !== $language) {
+        setcookie('alternpress_lang', $language, [
+            'expires' => time() + 31536000,
+            'path' => ap_url('/'),
+            'secure' => ap_https(),
+            'httponly' => false,
+            'samesite' => 'Lax',
+        ]);
+    }
+}
+
 function render_layout(string $language, string $relativePath, string $title, string $contentHtml): void
 {
     global $CONTENT_ROOT;
-
-    $scriptNonce = base64_encode(random_bytes(24));
-    header('Content-Type: text/html; charset=utf-8');
-    header('Cache-Control: no-cache, max-age=0, must-revalidate');
-    header("Content-Security-Policy: default-src 'self'; script-src 'nonce-" . $scriptNonce . "'; style-src 'self'; img-src 'self' https: http:; connect-src 'none'; object-src 'none'; base-uri 'self'; frame-ancestors 'self'; form-action 'self'");
 
     $text = labels($language);
     $contentHtml = protect_emails_in_html($contentHtml);
@@ -509,17 +518,8 @@ function render_layout(string $language, string $relativePath, string $title, st
         ?? ap_canonical_url($language, $relativePath);
     $structuredData = ap_discovery_graph($language, $relativePath);
     $description = ap_discovery_description($language, $relativePath, $text['site_description']);
-    $secureCookie = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off');
-
-    if (($_COOKIE['alternpress_lang'] ?? '') !== $language) {
-        setcookie('alternpress_lang', $language, [
-            'expires' => time() + 31536000,
-            'path' => ap_url('/'),
-            'secure' => $secureCookie,
-            'httponly' => false,
-            'samesite' => 'Lax',
-        ]);
-    }
+    ap_public_language_cookie($language);
+    ob_start();
 ?><!doctype html>
 <html lang="<?= h($language) ?>">
 <head>
@@ -528,7 +528,7 @@ function render_layout(string $language, string $relativePath, string $title, st
   <title><?= h($fullTitle) ?></title>
   <meta name="description" content="<?= h($description) ?>">
   <?php if ($structuredData !== []): ?>
-  <script type="application/ld+json" nonce="<?= h($scriptNonce) ?>"><?= json_encode($structuredData, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES | JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT | JSON_THROW_ON_ERROR) ?></script>
+  <script type="application/ld+json"><?= json_encode($structuredData, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES | JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT | JSON_THROW_ON_ERROR) ?></script>
   <?php endif; ?>
   <link rel="alternate" type="application/ld+json" href="<?= h(ap_url('/knowledge-graph.jsonld')) ?>" title="Knowledge graph">
   <link rel="sitemap" type="application/xml" href="<?= h(ap_url('/sitemap.xml')) ?>">
@@ -578,12 +578,12 @@ function render_layout(string $language, string $relativePath, string $title, st
 
   <small>© <?= date('Y') ?> <div id="legal-info" class="footer-credits"> </div> <?= h($text['footer']) ?><?php if (ap_config('email') !== ''): ?> · <?= protected_email_link(ap_config('email'), 'Email') ?><?php endif; ?></small>
 </footer>
-<script nonce="<?= h($scriptNonce) ?>">
+<script>
         // Offuscamento base per impedire il facile scraping testuale della P.IVA
         const info = <?= json_encode(ap_config('legal'), JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT) ?>;
         document.getElementById('legal-info').textContent = info;
     </script>
-<script nonce="<?= h($scriptNonce) ?>">
+<script>
 (() => {
   document.querySelectorAll('.js-protected-email[data-e]').forEach((link) => {
     link.addEventListener('click', (event) => {
@@ -601,9 +601,25 @@ function render_layout(string $language, string $relativePath, string $title, st
 </script>
 </body>
 </html><?php
+    // HTML parsers normalize line endings before checking inline-script hashes.
+    $html = str_replace(["\r\n", "\r"], "\n", (string) ob_get_clean());
+    // Hash the exact trusted script bodies. Unlike a cached random nonce,
+    // these hashes remain valid without granting permission to other scripts.
+    preg_match_all('~<script\b[^>]*>(.*?)</script>~s', $html, $scriptBodies);
+    $hashes = array_unique(array_map(static fn(string $body): string => "'sha256-" . base64_encode(hash('sha256', $body, true)) . "'", $scriptBodies[1]));
+    $csp = "default-src 'self'; script-src " . ($hashes ? implode(' ', $hashes) : "'none'") . "; style-src 'self'; img-src 'self' https: http:; connect-src 'none'; object-src 'none'; base-uri 'self'; frame-ancestors 'self'; form-action 'self'";
+    if (defined('AP_LIBRARY') && AP_LIBRARY) {
+        header('Content-Type: text/html; charset=utf-8');
+        header('Cache-Control: no-cache, max-age=0, must-revalidate');
+        header('Content-Security-Policy: ' . $csp);
+        echo $html;
+        return;
+    }
+    ap_page_cache_finish($language, $relativePath, $html, $csp);
 }
 
 require_once __DIR__ . '/lib/discovery.php';
+require_once __DIR__ . '/lib/page-cache.php';
 
 if (defined('AP_LIBRARY') && AP_LIBRARY) return;
 
@@ -650,6 +666,8 @@ if (preg_match('#^/post/([a-z0-9]+(?:-[a-z0-9]+)*)/([^/]+\.(?:jpg|jpeg|png|webp|
     http_response_code(404); exit;
 }
 
+ap_public_language_cookie($language);
+ap_page_cache_try_serve($language, $relativePath);
 $posts = load_posts($contentDir, $CACHE_DIR, $language);
 $text = labels($language);
 

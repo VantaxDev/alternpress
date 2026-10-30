@@ -1,5 +1,7 @@
 """HTTP discovery regressions on disposable fixtures; never target a live site."""
 from pathlib import Path
+import base64
+import hashlib
 import json
 import re
 import shutil
@@ -90,8 +92,8 @@ require __DIR__.'/site/index.php';
         expect(status == 200 and len(scripts) == 1, 'article serves a single embedded JSON-LD graph')
         embedded = json.loads(scripts[0][2])
         expect(any(node.get('@type') == 'BlogPosting' for node in embedded['@graph']), 'embedded graph describes the article')
-        nonce = re.search(r"script-src 'nonce-([^']+)'", headers.get('Content-Security-Policy', '')).group(1)
-        expect('nonce="' + nonce + '"' in scripts[0][0] + scripts[0][1], 'JSON-LD carries the matching CSP nonce')
+        jsonld_hash = "'sha256-" + base64.b64encode(hashlib.sha256(scripts[0][2].encode('utf-8')).digest()).decode() + "'"
+        expect(jsonld_hash in headers.get('Content-Security-Policy', ''), 'JSON-LD is authorized by its exact CSP hash')
         # Editing a published source in the same second must affect every route.
         article.write_text(article.read_text(encoding='utf-8').replace('status: published', 'status: draft'), encoding='utf-8')
         for path in ['/sitemap-it.xml', '/llms.txt', '/knowledge-graph.jsonld']:

@@ -1,6 +1,6 @@
 """Standard-library HTTP regressions on an isolated copy; no live site is touched."""
 from pathlib import Path
-import base64, html, http.cookiejar, json, re, shutil, socket, subprocess, tempfile, time
+import base64, hashlib, html, http.cookiejar, json, re, shutil, socket, subprocess, tempfile, time
 import urllib.error, urllib.parse, urllib.request
 
 source = Path(__file__).resolve().parents[1]
@@ -66,8 +66,10 @@ $_SERVER['SCRIPT_NAME']='/index.php';require __DIR__.'/site/index.php';
         status,public,headers=get_text('/it',auth=False)
         expect(status==200 and 'AlternPress' in public,'public demo renders')
         csp=headers.get('Content-Security-Policy','')
-        nonce=re.search(r"script-src 'nonce-([^']+)'",csp).group(1)
-        expect(all('nonce="'+nonce+'"' in tag for tag in re.findall(r'<script[^>]*>',public)),'public inline scripts use matching CSP nonce')
+        scripts=re.findall(r'<script\b[^>]*>(.*?)</script>',public,re.S)
+        hashes={"'sha256-"+base64.b64encode(hashlib.sha256(script.encode('utf-8')).digest()).decode()+"'" for script in scripts}
+        declared=set(re.findall(r"'sha256-[^']+'",csp))
+        expect(bool(scripts) and hashes==declared,'public CSP hashes exactly match trusted inline scripts')
         expect('unsafe-inline' not in csp and "object-src 'none'" in csp,'public CSP blocks arbitrary inline scripts and objects')
         expect('Never publicly visible' not in get_text('/it/archive',auth=False)[1],'draft absent from archive')
         expect(request('/it/post/private-regression',auth=False)[0]==404,'draft URL returns 404')

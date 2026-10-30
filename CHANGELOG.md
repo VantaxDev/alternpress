@@ -10,6 +10,15 @@
 - Respect draft translations, canonical subfolders and disabled search indexing.
 - Use article summaries in HTML descriptions and test discovery through PHP/HTTP.
 - Preserve static HTML directory indexes in applications sharing the site's root.
+- Cache public HTML and prepare optional Brotli quality 11 variants with a local
+  encoder; retain gzip and ordinary HTML fallback without requiring Brotli.
+- Validate current content fingerprints and publication state before cache reuse,
+  including direct Markdown edits and article withdrawal. Keep cache files private
+  behind PHP and use exact inline-script CSP hashes rather than cached nonces.
+- Add `alt-cli cache:warm` and extend `cache:clear` to prepared public pages.
+  Article saves prepare the saved published translations, home, archive and tag
+  index; settings and restores invalidate the cache, while other public pages
+  are prepared on eligible requests.
 
 ## 0.4.0-alpha — 2026-09-30
 

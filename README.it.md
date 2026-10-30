@@ -21,6 +21,11 @@ Apache 2.4 con mod_rewrite e `AllowOverride All` nella cartella del sito.
 Phar e zlib servono per i backup; PHP curl soltanto per controllare link esterni.
 Sono estensioni del normale ambiente PHP: il progetto non scarica librerie.
 
+La precompressione Brotli può usare l'estensione PHP Brotli oppure un eseguibile
+locale, ad esempio `/usr/bin/brotli`. Entrambi sono facoltativi e non inclusi nel
+pacchetto: senza Brotli il blog funziona con HTML e, se PHP zlib è disponibile,
+gzip. Non vengono contattati servizi esterni.
+
 1. Copia tutti i file della release, compresi quelli nascosti.
 2. Personalizza `config.local.php`: puoi creare un file PHP che restituisce un
    array di impostazioni, usando l’esempio della guida inglese.
@@ -71,6 +76,69 @@ puoi copiare il testo che hai scritto e ricaricare.
 In **Pagine** modifichi Home, Competenze e Contatti; le pagine sono pubblicate
 subito. Gli articoli si ritirano cambiando lo stato in Bozza. Non ci sono cestino,
 commenti, ruoli, plugin o gestione di iscritti.
+
+## Cache delle pagine e compressione
+
+AlternPress conserva le pagine HTML pubbliche già preparate nella cartella
+privata `cache/`. Prima di usare una copia, PHP verifica a ogni richiesta
+l'impronta dei contenuti correnti. Anche le modifiche manuali ai Markdown
+vengono rilevate: le richieste continuano a passare da PHP e a controllare lo
+stato di pubblicazione.
+
+Quando salvi un articolo dal pannello, vengono preparate le traduzioni appena
+salvate che risultano pubblicate, insieme a home, archivio degli articoli e
+indice dei tag. Le altre pagine pubbliche vengono preparate alla prima
+richiesta GET o HEAD idonea.
+Il salvataggio delle impostazioni e il ripristino di un backup invalidano la
+cache, senza ricostruire subito l'intero sito. Un articolo riportato in Bozza
+non viene servito dalla vecchia cache dopo la verifica del nuovo stato.
+
+Per preparare in anticipo le pagine pubbliche o eliminare i file generati,
+esegui dalla cartella del sito, come utente del server web:
+
+```sh
+sudo -u www-data ./alt-cli cache:clear
+sudo -u www-data ./alt-cli cache:warm
+```
+
+`cache:warm` prepara HTML e varianti compresse disponibili sul server.
+`cache:clear` svuota sia gli indici degli articoli sia le pagine preparate.
+Nessuno dei due comandi modifica gli articoli. Dopo lo svuotamento le pagine
+vengono generate su richiesta.
+
+Prima di usare `cache:warm` da CLI, imposta `origin` e `base_path` in
+`config.local.php` per l'installazione pubblica. Ad esempio: `origin` =
+`https://example.com`, senza cartella, e `base_path` = `''` alla radice del
+dominio oppure `'/blog'` in una sottocartella. Un comando CLI non può dedurre
+il dominio del visitatore e il percorso dell'installazione. I salvataggi dal
+pannello usano invece il contesto della richiesta web effettiva.
+
+AlternPress usa prima l'estensione PHP Brotli, quando disponibile, poi prova
+l'eseguibile locale configurato. Entrambi usano qualità fissa **11**. Il percorso
+predefinito dell'eseguibile è `/usr/bin/brotli`; se il server usa un percorso
+diverso, impostalo in `config.local.php`. Una stringa vuota per `brotli_binary`
+disattiva soltanto l'eseguibile; un'estensione PHP Brotli installata resta
+disponibile:
+
+```php
+<?php
+return [
+    'page_cache' => true,
+    'brotli_binary' => '/usr/bin/brotli', // Usa '' per disattivare solo l'eseguibile.
+];
+```
+
+Configura soltanto un eseguibile affidabile gestito dall'amministratore del
+server. Se l'encoder non è disponibile, la pubblicazione continua a funzionare:
+restano gzip, quando disponibile, e HTML normale, secondo le codifiche accettate
+dal client. La compressione avviene durante la preparazione della pagina e non
+si ripete per ogni risposta invariata. Imposta `page_cache` a `false` per
+disabilitare la cache delle pagine pubbliche.
+
+Mantieni `cache/` protetta dall'accesso HTTP diretto. PHP invia l'HTML con la
+Content Security Policy corrispondente, basata sugli hash esatti degli script
+incorporati, senza conservare e riutilizzare nonce casuali. Il pannello admin
+e le risposte private non vengono memorizzati. Vedi [Sicurezza](SECURITY.md).
 
 ## Password: cambio e recupero
 
@@ -170,7 +238,8 @@ pannello; usa `./alt-cli links:check --external` per il controllo HTTP.
 | --- | --- |
 | `./alt-cli status` | Riepilogo di articoli, traduzioni e fotografie |
 | `./alt-cli doctor` | Controllo ambiente PHP, configurazione e permessi |
-| `./alt-cli cache:clear` | Svuotamento degli indici rigenerabili |
+| `./alt-cli cache:clear` | Svuotamento degli indici e delle pagine pubbliche preparate |
+| `./alt-cli cache:warm` | Preparazione delle pagine pubbliche HTML e delle varianti compresse disponibili |
 | `./alt-cli password` | Impostazione o recupero della password |
 | `./alt-cli backup` | Backup completo privato con verifica SHA-256 |
 | `./alt-cli backup:data` | Backup dati compatibile con il ripristino dal pannello |
@@ -215,7 +284,8 @@ necessario un intervento via SSH dopo un arresto improvviso del server.
 
 Per ripetere le verifiche, nella copia del progetto esegui `php tests/run.php`,
 i file `tests/security-*.php`, `php tests/backups.php`, `php tests/diagnostics.php`
-e `python3 tests/security-http.py`. I test usano copie temporanee e dati generici.
+e i test HTTP `python3 tests/security-http.py`, `python3 tests/discovery-http.py`
+e `python3 tests/page-cache-http.py`. I test usano copie temporanee e dati generici.
 Python serve soltanto al collaudo HTTP, non al funzionamento di AlternPress.
 Il repository esegue questi controlli automaticamente a ogni aggiornamento.
 
