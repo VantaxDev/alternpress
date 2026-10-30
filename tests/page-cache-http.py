@@ -29,11 +29,16 @@ def expect(value, label):
 
 
 def csp_matches(body, headers):
-    scripts = re.findall(r'<script\b[^>]*>(.*?)</script>', body.decode('utf-8'), re.S)
+    document = body.decode('utf-8')
+    scripts = re.findall(r'<script\b[^>]*>(.*?)</script>', document, re.S)
     expected = {"'sha256-" + base64.b64encode(hashlib.sha256(script.encode('utf-8')).digest()).decode() + "'" for script in scripts}
     csp = headers.get('Content-Security-Policy', '')
-    actual = set(re.findall(r"'sha256-[^']+'", csp))
-    return bool(scripts) and expected == actual and 'unsafe-inline' not in csp and 'nonce-' not in csp
+    directives = dict(re.findall(r'(?:^|;)\s*(script-src|style-src)\s+([^;]*)', csp))
+    actual = set(re.findall(r"'sha256-[^']+'", directives.get('script-src', '')))
+    styles = re.findall(r'<style\b[^>]*>(.*?)</style>', document, re.S)
+    expected_styles = {"'sha256-" + base64.b64encode(hashlib.sha256(style.encode('utf-8')).digest()).decode() + "'" for style in styles}
+    actual_styles = set(re.findall(r"'sha256-[^']+'", directives.get('style-src', '')))
+    return bool(scripts) and expected == actual and expected_styles == actual_styles and 'unsafe-inline' not in csp and 'nonce-' not in csp
 
 
 with tempfile.TemporaryDirectory(prefix='alternpress-page-cache-http-') as directory:

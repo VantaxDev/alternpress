@@ -518,6 +518,13 @@ function render_layout(string $language, string $relativePath, string $title, st
         ?? ap_canonical_url($language, $relativePath);
     $structuredData = ap_discovery_graph($language, $relativePath);
     $description = ap_discovery_description($language, $relativePath, $text['site_description']);
+    // Establish an opaque canvas before external styles arrive. This trusted literal
+    // has its own CSP hash; content supplied by authors never adds style permissions.
+    $initialPageStyle = 'html{color-scheme:light;background-color:#fff;color:#1e293b}@media(prefers-color-scheme:dark){html{color-scheme:dark;background-color:#0e1523;color:#e2e8f0}}';
+    $initialStyleHash = "'sha256-" . base64_encode(hash('sha256', $initialPageStyle, true)) . "'";
+    $siteCssFile = __DIR__ . '/assets/site.css';
+    $siteCssHash = public_path_ok($siteCssFile) ? hash_file('sha256', $siteCssFile) : false;
+    $siteCssUrl = ap_url('/assets/site.css') . ($siteCssHash ? '?v=' . substr($siteCssHash, 0, 16) : '');
     ap_public_language_cookie($language);
     ob_start();
 ?><!doctype html>
@@ -525,7 +532,16 @@ function render_layout(string $language, string $relativePath, string $title, st
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="color-scheme" content="light dark">
+  <style><?= $initialPageStyle ?></style>
+  <meta name="theme-color" content="#ffffff" media="(prefers-color-scheme: light)">
+  <meta name="theme-color" content="#0e1523" media="(prefers-color-scheme: dark)">
   <title><?= h($fullTitle) ?></title>
+  <link rel="stylesheet" href="<?= h(ap_url('/assets/base.css')) ?>">
+  <link rel="stylesheet" href="<?= h($siteCssUrl) ?>">
+  <?php if (ap_config('custom_css') !== ''): ?>
+  <link rel="stylesheet" href="<?= h(ap_url('/index.php') . '?ap-css=custom&v=' . substr(hash('sha256', (string) ap_config('custom_css')), 0, 16)) ?>">
+  <?php endif; ?>
   <meta name="description" content="<?= h($description) ?>">
   <?php if ($structuredData !== []): ?>
   <script type="application/ld+json"><?= json_encode($structuredData, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES | JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT | JSON_THROW_ON_ERROR) ?></script>
@@ -534,17 +550,11 @@ function render_layout(string $language, string $relativePath, string $title, st
   <link rel="sitemap" type="application/xml" href="<?= h(ap_url('/sitemap.xml')) ?>">
   <link rel="alternate" type="text/plain" href="<?= h(ap_url('/llms.txt')) ?>" title="LLM content index">
   <link rel="icon" href="<?= h(ap_url('/assets/favicon.svg')) ?>" type="image/svg+xml">
-  <meta name="theme-color" content="#111827">
   <link rel="canonical" href="<?= h($currentUrl) ?>">
   <?php foreach ($alternateUrls as $alternateLanguage => $alternateUrl): ?>
   <link rel="alternate" hreflang="<?= h($alternateLanguage) ?>" href="<?= h($alternateUrl) ?>">
   <?php endforeach; ?>
   <link rel="alternate" hreflang="x-default" href="<?= h($xDefaultUrl) ?>">
-  <link rel="stylesheet" href="<?= h(ap_url('/assets/base.css')) ?>">
-  <link rel="stylesheet" href="<?= h(ap_url('/assets/site.css')) ?>">
-  <?php if (ap_config('custom_css') !== ''): ?>
-  <link rel="stylesheet" href="<?= h(ap_url('/index.php') . '?ap-css=custom&v=' . substr(hash('sha256', (string) ap_config('custom_css')), 0, 16)) ?>">
-  <?php endif; ?>
 </head>
 <body>
 <header class="site-header">
@@ -607,7 +617,7 @@ function render_layout(string $language, string $relativePath, string $title, st
     // these hashes remain valid without granting permission to other scripts.
     preg_match_all('~<script\b[^>]*>(.*?)</script>~s', $html, $scriptBodies);
     $hashes = array_unique(array_map(static fn(string $body): string => "'sha256-" . base64_encode(hash('sha256', $body, true)) . "'", $scriptBodies[1]));
-    $csp = "default-src 'self'; script-src " . ($hashes ? implode(' ', $hashes) : "'none'") . "; style-src 'self'; img-src 'self' https: http:; connect-src 'none'; object-src 'none'; base-uri 'self'; frame-ancestors 'self'; form-action 'self'";
+    $csp = "default-src 'self'; script-src " . ($hashes ? implode(' ', $hashes) : "'none'") . "; style-src 'self' " . $initialStyleHash . "; img-src 'self' https: http:; connect-src 'none'; object-src 'none'; base-uri 'self'; frame-ancestors 'self'; form-action 'self'";
     if (defined('AP_LIBRARY') && AP_LIBRARY) {
         header('Content-Type: text/html; charset=utf-8');
         header('Cache-Control: no-cache, max-age=0, must-revalidate');
