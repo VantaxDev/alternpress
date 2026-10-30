@@ -2,6 +2,8 @@
 
 [Theme, favicon, cache & compression — quick guide / Guida rapida](QUICKSTART.md)
 
+[Update del solo codice, rollback automatico e recupero dopo interruzioni](UPDATE.md)
+
 [Sito del progetto](https://alternpress.com/it/) · [English](README.md) · [Codice e release](https://github.com/VantaxDev/alternpress) · [Sicurezza](SECURITY.md)
 
 **Solo per chi ha qualcosa da dire.**

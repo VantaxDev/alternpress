@@ -535,11 +535,13 @@ function render_layout(string $language, string $relativePath, string $title, st
     $favicon = public_path_ok(__DIR__ . '/assets/favicon.local.svg')
         ? '/assets/favicon.local.svg' : '/assets/favicon.svg';
     ap_public_language_cookie($language);
+    ap_update_probe_headers();
     ob_start();
 ?><!doctype html>
 <html lang="<?= h($language) ?>">
 <head>
   <meta charset="utf-8" />
+  <?php if (ap_update_probe() !== ''): ?><meta name="alternpress-update-probe" content="<?= h(ap_update_probe()) ?>"><?php endif; ?>
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <meta name="color-scheme" content="light dark">
   <style><?= $initialPageStyle ?></style>
