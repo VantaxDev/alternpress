@@ -66,10 +66,15 @@ $_SERVER['SCRIPT_NAME']='/index.php';require __DIR__.'/site/index.php';
         status,public,headers=get_text('/it',auth=False)
         expect(status==200 and 'AlternPress' in public,'public demo renders')
         csp=headers.get('Content-Security-Policy','')
+        directives=dict(re.findall(r'(?:^|;)\s*(script-src|style-src)\s+([^;]*)',csp))
         scripts=re.findall(r'<script\b[^>]*>(.*?)</script>',public,re.S)
         hashes={"'sha256-"+base64.b64encode(hashlib.sha256(script.encode('utf-8')).digest()).decode()+"'" for script in scripts}
-        declared=set(re.findall(r"'sha256-[^']+'",csp))
+        declared=set(re.findall(r"'sha256-[^']+'",directives.get('script-src','')))
         expect(bool(scripts) and hashes==declared,'public CSP hashes exactly match trusted inline scripts')
+        styles=re.findall(r'<style\b[^>]*>(.*?)</style>',public,re.S)
+        style_hashes={"'sha256-"+base64.b64encode(hashlib.sha256(style.encode('utf-8')).digest()).decode()+"'" for style in styles}
+        declared_styles=set(re.findall(r"'sha256-[^']+'",directives.get('style-src','')))
+        expect(style_hashes==declared_styles and 'unsafe-inline' not in directives.get('style-src',''),'public CSP hashes exactly match trusted inline styles without unsafe-inline')
         expect('unsafe-inline' not in csp and "object-src 'none'" in csp,'public CSP blocks arbitrary inline scripts and objects')
         expect('Never publicly visible' not in get_text('/it/archive',auth=False)[1],'draft absent from archive')
         expect(request('/it/post/private-regression',auth=False)[0]==404,'draft URL returns 404')
