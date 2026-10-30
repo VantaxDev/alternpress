@@ -37,9 +37,10 @@ PHP **8.2+** with mbstring, fileinfo, GD, sessions and JSON; Phar and zlib for
 CLI backups. The optional external link checker also uses PHP curl. These are
 PHP extensions, not downloaded project libraries or services.
 
-Brotli precompression optionally uses a local encoder such as `/usr/bin/brotli`.
-It is not bundled or required: the blog works with HTML and, when PHP zlib is
-available, gzip without installing Brotli. No external service is contacted.
+Brotli precompression can use the optional PHP Brotli extension or a local
+executable such as `/usr/bin/brotli`. Neither is bundled or required: the blog
+works with HTML and, when PHP zlib is available, gzip without installing Brotli.
+No external service is contacted.
 
 Apache 2.4 with mod_rewrite and `AllowOverride All` for the application directory.
 Use HTTPS for the public installation. The release targets Apache: an nginx
@@ -191,15 +192,17 @@ folder, and `base_path` = `''` at the domain root or `'/blog'` for a subfolder.
 A CLI process cannot infer the visitor's hostname and installation path.
 Admin saves use the actual web request's context.
 
-The default local encoder path is `/usr/bin/brotli`; compression uses fixed
-quality **11**. Set an absolute path in `config.local.php` if your host installs
-it elsewhere, or leave it empty to disable Brotli:
+AlternPress first uses the PHP Brotli extension when available, then tries the
+configured local executable. Both use fixed quality **11**. The default
+executable path is `/usr/bin/brotli`; set an absolute path in `config.local.php`
+if your host installs it elsewhere. An empty `brotli_binary` disables only the
+executable; an installed PHP Brotli extension remains available:
 
 ```php
 <?php
 return [
     'page_cache' => true,
-    'brotli_binary' => '/usr/bin/brotli', // Use '' to disable Brotli.
+    'brotli_binary' => '/usr/bin/brotli', // Use '' to disable the executable only.
 ];
 ```
 

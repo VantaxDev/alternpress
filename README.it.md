@@ -21,10 +21,10 @@ Apache 2.4 con mod_rewrite e `AllowOverride All` nella cartella del sito.
 Phar e zlib servono per i backup; PHP curl soltanto per controllare link esterni.
 Sono estensioni del normale ambiente PHP: il progetto non scarica librerie.
 
-La precompressione Brotli può usare un encoder locale, ad esempio
-`/usr/bin/brotli`. È facoltativo e non è incluso nel pacchetto: senza Brotli il
-blog funziona con HTML e, se PHP zlib è disponibile, gzip. Non vengono
-contattati servizi esterni.
+La precompressione Brotli può usare l'estensione PHP Brotli oppure un eseguibile
+locale, ad esempio `/usr/bin/brotli`. Entrambi sono facoltativi e non inclusi nel
+pacchetto: senza Brotli il blog funziona con HTML e, se PHP zlib è disponibile,
+gzip. Non vengono contattati servizi esterni.
 
 1. Copia tutti i file della release, compresi quelli nascosti.
 2. Personalizza `config.local.php`: puoi creare un file PHP che restituisce un
@@ -113,15 +113,18 @@ dominio oppure `'/blog'` in una sottocartella. Un comando CLI non può dedurre
 il dominio del visitatore e il percorso dell'installazione. I salvataggi dal
 pannello usano invece il contesto della richiesta web effettiva.
 
-Il percorso predefinito dell'encoder locale è `/usr/bin/brotli`; la qualità è
-fissata a **11**. Se il server usa un percorso diverso, impostalo in
-`config.local.php`; una stringa vuota disabilita Brotli:
+AlternPress usa prima l'estensione PHP Brotli, quando disponibile, poi prova
+l'eseguibile locale configurato. Entrambi usano qualità fissa **11**. Il percorso
+predefinito dell'eseguibile è `/usr/bin/brotli`; se il server usa un percorso
+diverso, impostalo in `config.local.php`. Una stringa vuota per `brotli_binary`
+disattiva soltanto l'eseguibile; un'estensione PHP Brotli installata resta
+disponibile:
 
 ```php
 <?php
 return [
     'page_cache' => true,
-    'brotli_binary' => '/usr/bin/brotli', // Usa '' per disabilitare Brotli.
+    'brotli_binary' => '/usr/bin/brotli', // Usa '' per disattivare solo l'eseguibile.
 ];
 ```
 
