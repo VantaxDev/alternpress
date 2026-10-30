@@ -443,6 +443,7 @@ function ap_restore_apply(string $token): array {
         try {
             ap_assert_path(AP_ROOT . '/cache');
             foreach (glob(AP_ROOT . '/cache/*.json') ?: [] as $cache) { ap_assert_path($cache); if (is_file($cache)) @unlink($cache); }
+            ap_page_cache_clear();
         } catch (Throwable $cacheError) { error_log('AlternPress restore succeeded; cache cleanup failed: ' . $cacheError->getMessage()); }
         $result = array_merge(['backup' => $backup['name']], ap_backup_counts($archive['files']));
         try { ap_restore_remove_tree($dir); }

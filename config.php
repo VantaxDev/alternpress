@@ -22,6 +22,8 @@ return [
     'site_url' => '', // Optional public canonical URL, including the site's folder.
     'custom_css' => '', // Managed from Settings; applied only to the public blog.
     'search_indexing' => true,
+    'page_cache' => true, // Prepared public HTML; private/admin responses are never cached.
+    'brotli_binary' => '/usr/bin/brotli', // Optional local encoder; quality is always 11.
     'posts_per_page' => 12,
     'upload_max_mb' => 8,
     'image_max_pixels' => 24000000,

@@ -28,12 +28,18 @@ Version **0.5.0-alpha**. MIT license. [Guida in italiano](README.it.md).
 - `alt-cli` for checks, password recovery, cache, backups and link checking.
 - Automatic JSON-LD, a linked knowledge graph, multilingual XML sitemaps and
   `llms.txt` for published content. See [AI discovery](README-AI.md).
+- Public HTML page cache with optional Brotli quality 11 precompression and
+  gzip or ordinary HTML fallback.
 
 ## Requirements
 
 PHP **8.2+** with mbstring, fileinfo, GD, sessions and JSON; Phar and zlib for
 CLI backups. The optional external link checker also uses PHP curl. These are
 PHP extensions, not downloaded project libraries or services.
+
+Brotli precompression optionally uses a local encoder such as `/usr/bin/brotli`.
+It is not bundled or required: the blog works with HTML and, when PHP zlib is
+available, gzip without installing Brotli. No external service is contacted.
 
 Apache 2.4 with mod_rewrite and `AllowOverride All` for the application directory.
 Use HTTPS for the public installation. The release targets Apache: an nginx
@@ -152,6 +158,63 @@ links, pictures, quotes, ordered/unordered lists, fenced code and simple tables.
 Raw HTML is shown as text. This is a deliberately small parser, not a full
 CommonMark implementation. Translations are written by the editor, not automatic.
 
+## Public page cache and compression
+
+AlternPress keeps prepared public HTML pages in its private `cache/` directory.
+PHP validates the current content fingerprint on each request before using a
+cached response. Direct Markdown edits are therefore detected too. PHP remains
+in the request path and continues checking publication status.
+
+After an article is saved in the admin, AlternPress prepares the just-saved
+published translations together with the home, article archive and tag-index
+pages. Other public pages are prepared on their first eligible GET or HEAD
+request. Saving settings or
+restoring a backup invalidates cached pages; it does not eagerly rebuild the
+whole site. Returning an article to Draft prevents its old cached page from
+being served after the new publication state is validated.
+
+To prepare public pages in advance or remove generated files, run as the web
+user from the installation directory:
+
+```sh
+sudo -u www-data ./alt-cli cache:clear
+sudo -u www-data ./alt-cli cache:warm
+```
+
+`cache:warm` prepares public HTML and the compressed variants available on the
+host. `cache:clear` clears both article indexes and prepared pages. Neither
+command changes your articles. After a clear, pages are generated on demand.
+
+Before CLI warming, set `origin` and `base_path` in `config.local.php` for the
+public installation. For example, use `origin` = `https://example.com` with no
+folder, and `base_path` = `''` at the domain root or `'/blog'` for a subfolder.
+A CLI process cannot infer the visitor's hostname and installation path.
+Admin saves use the actual web request's context.
+
+The default local encoder path is `/usr/bin/brotli`; compression uses fixed
+quality **11**. Set an absolute path in `config.local.php` if your host installs
+it elsewhere, or leave it empty to disable Brotli:
+
+```php
+<?php
+return [
+    'page_cache' => true,
+    'brotli_binary' => '/usr/bin/brotli', // Use '' to disable Brotli.
+];
+```
+
+Only configure a trusted executable maintained by the server administrator.
+An unavailable encoder does not prevent publication: gzip, when available,
+and ordinary HTML remain compatible responses according to the client's
+accepted encodings. Compression happens while preparing the cached page,
+not again for every unchanged response. Set `page_cache` to `false` to disable
+the public page cache.
+
+Keep `cache/` blocked from direct HTTP access. PHP sends the cached HTML with
+the matching Content Security Policy, using hashes of the exact inline script
+bodies instead of storing and reusing random nonces. Admin and private responses
+are not cached. See [Security](SECURITY.md).
+
 ## Change or recover the password
 
 In the panel, open **Settings → Change password**, enter the current password,
@@ -179,6 +242,7 @@ Run commands from the installation directory, preferably as the web user:
 ./alt-cli status
 ./alt-cli doctor
 ./alt-cli cache:clear
+./alt-cli cache:warm
 ./alt-cli password
 ./alt-cli backup
 ./alt-cli backup:verify storage/backups/alternpress-….tar.gz
@@ -283,7 +347,7 @@ Your Markdown goes here.
 
 `content/{it,en}/{home,skills,about}/index.md` holds pages.
 `media/` holds raster images; `storage/` holds private auth, history and backups;
-`cache/` holds disposable indexes. Direct HTTP access to content, storage, config,
+`cache/` holds disposable indexes and prepared public pages. Direct HTTP access to content, storage, config,
 CLI and library files is blocked. Login uses secure HTTP-only session cookies on
 HTTPS, CSRF checks and a per-IP attempt limit. Re-encoding uploaded images prevents
 using an uploaded script as executable code.
@@ -305,6 +369,7 @@ uploads, draft visibility, Markdown rendering and backup restore. See
 [SECURITY.md](SECURITY.md) for the deployment boundary and interruption recovery.
 
 Run every `tests/*.php` file with PHP, followed by
-`python3 tests/security-http.py`. Tests create temporary fixtures with generic
+`python3 tests/security-http.py`, `python3 tests/discovery-http.py` and
+`python3 tests/page-cache-http.py`. Tests create temporary fixtures with generic
 data; they do not modify a live installation. Python is used only for HTTP tests,
 not by the application. GitHub CI repeats the suite on pushes and pull requests.

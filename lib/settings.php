@@ -62,5 +62,7 @@ function ap_save_settings(array $input, string $section): void {
         } else { throw new RuntimeException('Unknown settings section.'); }
         if ($old) ap_private_write('history/settings-' . gmdate('Ymd-His') . '-' . bin2hex(random_bytes(4)), $old);
         ap_private_write('settings', ['values' => array_replace($values, $updates)]);
+        // Bootstrap will load the saved values before the next public render.
+        ap_page_cache_clear();
     });
 }

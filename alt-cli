@@ -114,7 +114,7 @@ try {
         case 'help':
         case '--help':
         case '-h':
-            say("AlternPress 0.5.0-alpha — simple, self-contained, yours.\n\nUsage: ./alt-cli COMMAND\n\n  status                 Counts and site location\n  doctor                 Check PHP, configuration and writable directories\n  cache:clear            Clear generated article indexes\n  password               Set/reset the only admin password (hidden input)\n  backup                 Create a complete private .tar.gz backup + SHA-256\n  backup:data            Create a data archive for restore in the dashboard\n  check                  Check recursive permissions, local links and unused photos\n  check --json           Machine-readable check report\n  backup:verify FILE     Verify a backup against its .sha256 sidecar\n  links:check            Check local Markdown links and images\n  links:check --external Also check public external links (HTTP HEAD)\n  version                Print the version\n  help                   Show this help\n\nRun as the web user, e.g. sudo -u www-data ./alt-cli backup.\nNo package manager, database or external service is required.\n"); break;
+            say("AlternPress 0.5.0-alpha — simple, self-contained, yours.\n\nUsage: ./alt-cli COMMAND\n\n  status                 Counts and site location\n  doctor                 Check PHP, configuration and writable directories\n  cache:clear            Clear generated article indexes and pages\n  cache:warm             Prepare public HTML and available compressed copies\n  password               Set/reset the only admin password (hidden input)\n  backup                 Create a complete private .tar.gz backup + SHA-256\n  backup:data            Create a data archive for restore in the dashboard\n  check                  Check recursive permissions, local links and unused photos\n  check --json           Machine-readable check report\n  backup:verify FILE     Verify a backup against its .sha256 sidecar\n  links:check            Check local Markdown links and images\n  links:check --external Also check public external links (HTTP HEAD)\n  version                Print the version\n  help                   Show this help\n\nRun as the web user, e.g. sudo -u www-data ./alt-cli backup.\nNo package manager, database or external service is required.\n"); break;
         case 'version': say('AlternPress 0.5.0-alpha'); break;
         case 'status':
             $rows = ap_all_posts(); $published = 0; $drafts = 0;
@@ -133,8 +133,10 @@ try {
             say('Check HTTP protection separately: /storage/, /content/ and /config.local.php must return 403/404.');
             exit($failed ? 1 : 0);
         case 'cache:clear':
-            $count = ap_lock(static function() { ap_assert_path(AP_ROOT . '/cache'); $files = glob(AP_ROOT . '/cache/posts-*.json') ?: []; foreach ($files as $file) { ap_assert_path($file); if (!unlink($file)) throw new RuntimeException('Cannot clear cached index.'); } return count($files); });
-            say('Cleared ' . $count . ' generated indexes.'); break;
+            ap_lock(static fn() => ap_clear_post_cache());
+            say('Cleared generated article indexes and public page cache.'); break;
+        case 'cache:warm':
+            say('Prepared ' . ap_page_cache_warm_all() . ' public pages.'); break;
         case 'password':
             require __DIR__ . '/bin/password.php'; break;
         case 'backup':

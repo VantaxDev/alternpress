@@ -134,7 +134,7 @@ function ap_clean_line(string $value, int $max = 250): string {
 }
 function ap_save_document(array $input): string {
     ap_validate_document_input($input);
-    return ap_lock(static function() use ($input): string {
+    $savedId = ap_lock(static function() use ($input): string {
         $kind = ($input['kind'] ?? '') === 'page' ? 'page' : 'post';
         $id = strtolower(trim((string) ($input['id'] ?? '')));
         if (!ap_id_valid($id)) throw new RuntimeException(t('Usa un identificativo con lettere minuscole, numeri e trattini.', 'Use a slug with lowercase letters, numbers and hyphens.'));
@@ -195,6 +195,8 @@ function ap_save_document(array $input): string {
         ap_clear_post_cache();
         return $id;
     });
+    ap_page_cache_warm_document($savedId, ($input['kind'] ?? '') === 'page' ? 'page' : 'post');
+    return $savedId;
 }
 function ap_upload(array $file): array {
     if (($file['error'] ?? UPLOAD_ERR_NO_FILE) !== UPLOAD_ERR_OK || !is_string($file['tmp_name'] ?? null)) throw new RuntimeException(t('Caricamento non riuscito. Controlla il limite della foto.', 'Upload failed. Check the photo size limit.'));
@@ -244,6 +246,7 @@ function ap_clear_post_cache(): void {
         ap_assert_path($cache);
         if (is_file($cache) && !unlink($cache)) throw new RuntimeException('Cannot clear the cache.');
     }
+    ap_page_cache_clear();
 }
 function ap_media_files(): array {
     ap_assert_path(AP_ROOT . '/media');

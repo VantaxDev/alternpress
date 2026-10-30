@@ -28,6 +28,7 @@ define('SITE_ORIGIN', ap_origin());
 function ap_config(string $key): mixed { global $AP_CONFIG; return $AP_CONFIG[$key] ?? null; }
 function ap_base(): string {
     if (ap_config('base_path') !== null) return rtrim((string) ap_config('base_path'), '/');
+    if (PHP_SAPI === 'cli' && defined('AP_CACHE_WARM') && AP_CACHE_WARM && defined('AP_CACHE_BASE_PATH')) return AP_CACHE_BASE_PATH;
     $script = str_replace('\\', '/', $_SERVER['SCRIPT_NAME'] ?? '/index.php');
     $base = preg_replace('#/(?:admin/)?index\.php$#', '', $script);
     return PHP_SAPI === 'cli' ? '' : rtrim($base, '/');
