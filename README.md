@@ -363,6 +363,10 @@ private articles. The example content in the clean release is generic.
 
 ## Checks
 
+For reviewed code-only packages, automatic rollback and interruption recovery,
+see [the short update guide](UPDATE.md). The updater is opt-in, not an automatic
+installation or a promise of zero downtime.
+
 `php tests/run.php` runs focused Markdown and path regression checks.
 The alpha was also exercised through HTTP for authentication, CSRF, private
 paths, draft visibility, bilingual publication, uploads, conflicts and relocation.
@@ -375,6 +379,7 @@ uploads, draft visibility, Markdown rendering and backup restore. See
 
 Run every `tests/*.php` file with PHP, followed by
 `python3 tests/security-http.py`, `python3 tests/discovery-http.py` and
-`python3 tests/page-cache-http.py`. Tests create temporary fixtures with generic
+`python3 tests/page-cache-http.py` and `python3 tests/updater-http.py`.
+Tests create temporary fixtures with generic
 data; they do not modify a live installation. Python is used only for HTTP tests,
 not by the application. GitHub CI repeats the suite on pushes and pull requests.
