@@ -146,6 +146,27 @@ Each translation has its own Draft/Published setting. Saving a published
 translation updates it immediately; a future editorial date does not schedule
 publication. Switch it back to Draft to remove it from public view.
 
+To schedule a translation, select **Published** and set **Publish from** to an
+explicit instant, for example `2030-03-31T09:00:00+02:00` (Rome summer time) or
+`2030-03-31T07:00:00Z`. Leave it empty for immediate publication. The field is
+saved as `publish_at` in that translation's Markdown front matter. Seconds and
+an explicit UTC offset are required; the displayed site timezone is guidance,
+not an implicit conversion. This avoids ambiguity during daylight-saving changes.
+
+Before that instant the translation is private, including its public URL,
+article-local attachments, navigation, archives, tags, language alternates,
+sitemaps, llms.txt and JSON-LD/knowledge graph. At or after it, the next request
+can display it. Generated indexes and HTML/compressed caches revalidate at the
+boundary even without file edits. No database, cron, background worker or
+scheduled filesystem write is needed. The server clock must be correct.
+
+Draft always wins over the timestamp, even if the time is in the past. Invalid
+timestamps in hand-edited files fail private; the editor rejects them. Existing
+articles without `publish_at` keep their previous behavior, including future
+editorial dates. Use the authenticated editor's **Preview** for private work;
+there are no anonymous draft links. Shared uploads in `media/` remain public as
+described below. There is no public search or RSS/Atom feed in this release.
+
 Upload with **+ Photo**. Add an alternative text, then select a photo to insert
 it at the cursor. Use **Choose photo** for a cover. References such as
 `@media/0123….png` are resolved at rendering time and survive moving the site.

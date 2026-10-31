@@ -386,7 +386,10 @@ function load_posts(string $contentDir, string $cacheDir, string $language): arr
     foreach (list_post_dirs($contentDir . '/post') as $directory) {
         $source = $directory . '/index.md';
         $raw = public_markdown($source);
-        if ($raw !== null) { hash_update($fingerprint, $source); hash_update($fingerprint, $raw); }
+        if ($raw !== null) {
+            hash_update($fingerprint, $source); hash_update($fingerprint, $raw);
+            hash_update($fingerprint, ap_published(parse_front_matter($raw)[0]) ? 'public' : 'private');
+        }
     }
     $signature = hash_final($fingerprint);
     $cacheFile = $cacheDir . '/posts-' . $language . '.json';

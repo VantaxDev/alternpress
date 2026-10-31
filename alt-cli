@@ -119,10 +119,10 @@ try {
             say("AlternPress 0.5.0-alpha — simple, self-contained, yours.\n\nUsage: ./alt-cli COMMAND\n\n  status                 Counts and site location\n  doctor                 Check PHP, configuration and writable directories\n  cache:clear            Clear generated article indexes and pages\n  cache:warm             Prepare public HTML and available compressed copies\n  password               Set/reset the only admin password (hidden input)\n  backup                 Create a complete private .tar.gz backup + SHA-256\n  backup:data            Create a data archive for restore in the dashboard\n  check                  Check recursive permissions, local links and unused photos\n  check --json           Machine-readable check report\n  backup:verify FILE     Verify a backup against its .sha256 sidecar\n  links:check            Check local Markdown links and images\n  links:check --external Also check public external links (HTTP HEAD)\n  version                Print the version\n  help                   Show this help\n\nRun as the web user, e.g. sudo -u www-data ./alt-cli backup.\nNo package manager, database or external service is required.\n"); break;
         case 'version': say('AlternPress 0.5.0-alpha'); break;
         case 'status':
-            $rows = ap_all_posts(); $published = 0; $drafts = 0;
-            foreach ($rows as $row) foreach ($row['translations'] as $doc) { if (ap_published($doc['meta'])) $published++; else $drafts++; }
+            $rows = ap_all_posts(); $states = ['published' => 0, 'draft' => 0, 'scheduled' => 0, 'invalid' => 0];
+            foreach ($rows as $row) foreach ($row['translations'] as $doc) $states[ap_publication_state($doc['meta'])]++;
             say(ap_config('name') . ' · AlternPress 0.5.0-alpha'); say('Directory: ' . AP_ROOT);
-            say(count($rows) . ' articles · ' . $published . ' published translations · ' . $drafts . ' drafts');
+            say(count($rows) . ' articles · ' . $states['published'] . ' published translations · ' . $states['draft'] . ' drafts · ' . $states['scheduled'] . ' scheduled translations · ' . $states['invalid'] . ' invalid schedules (private)');
             say(count(glob(AP_ROOT . '/media/*.{jpg,png,webp}', GLOB_BRACE) ?: []) . ' photos');
             say('Admin password: ' . (ap_private_read('auth') ? 'configured' : 'not configured')); break;
         case 'doctor':
