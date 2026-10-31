@@ -244,6 +244,10 @@ può comunque essere usata altrove. Le scansioni incomplete sono indicate e non
 producono un elenco di orfani. I link esterni non vengono interrogati dal
 pannello; usa `./alt-cli links:check --external` per il controllo HTTP.
 
+`links:check` riconosce sitemap, robots.txt, llms.txt e grafo della conoscenza
+come risorse generate dall'applicazione, anche nelle installazioni in
+sottocartelle: non richiede file su disco né richieste di rete per verificarle.
+
 ## alt-cli
 
 | Comando | Operazione |

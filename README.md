@@ -320,6 +320,9 @@ requests and URL fragments; use `./alt-cli links:check --external` when needed.
 
 `links:check` examines Markdown links, image references and covers, including
 drafts. It skips fragment checks, email/tel links and external URLs by default.
+Generated discovery resources (sitemaps, robots.txt, llms.txt and the knowledge
+graph) are checked as application routes, without requiring files on disk or
+network requests, including installations in a subdirectory.
 `--external` makes HTTP HEAD requests, checks redirects and blocks private network
 addresses. It currently resolves public IPv4 addresses. HTTP 403/405/429 and
 network errors mean **review**, not necessarily a dead link; only 404/410 are
