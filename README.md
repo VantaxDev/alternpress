@@ -238,6 +238,15 @@ If the executable bit was lost during a file copy, use `php alt-cli password`.
 For a private noninteractive setup, `./alt-cli password --stdin` accepts one line
 from standard input. Avoid putting real passwords in shell command history.
 
+The limit is **12–72 bytes**, not necessarily characters: ASCII uses one byte per
+character; UTF-8 characters may use several. Null bytes are rejected. On success
+the CLI prints `Password CHANGED: saved successfully. Existing sessions are invalidated.`
+only after atomic storage replacement. Failures print `Password NOT CHANGED:`
+with a reason and keep the previous credentials. Exit codes: `0` saved, `2` invalid
+length/null byte or mismatched confirmation, `3` input/terminal failure, `4` storage
+failure (check permissions, locking and free disk space). Passwords are never echoed
+or included in diagnostic messages. No email recovery is implemented.
+
 ## alt-cli
 
 Run commands from the installation directory, preferably as the web user:
