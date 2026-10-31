@@ -93,7 +93,7 @@ function ap_validate_document_input(array $input): void {
     foreach (SUPPORTED_LANGUAGES as $language) {
         $fields = $input['translation'][$language] ?? [];
         if (!is_array($fields)) throw new RuntimeException('Invalid translation.');
-        foreach (['title', 'body', 'status', 'revision', 'cover', 'tags', 'excerpt'] as $key) ap_input_string($fields, $key);
+        foreach (['title', 'body', 'status', 'publish_at', 'revision', 'cover', 'tags', 'excerpt'] as $key) ap_input_string($fields, $key);
     }
 }
 function ap_post_path(string $language, string $id, string $kind = 'post'): string {
@@ -166,6 +166,12 @@ function ap_save_document(array $input): string {
             $meta['title'] = $title;
             $meta['date'] = $date;
             $meta['status'] = $kind === 'page' ? 'published' : $status;
+            $publishAt = trim(ap_input_string($fields, 'publish_at', (string) ($meta['publish_at'] ?? '')));
+            if ($publishAt !== '' && ap_publish_timestamp($publishAt) === null) {
+                throw new RuntimeException(t('Orario di pubblicazione non valido: usa YYYY-MM-DDTHH:MM:SS con Z o fuso ±HH:MM.', 'Invalid publication time: use YYYY-MM-DDTHH:MM:SS with Z or offset ±HH:MM.'));
+            }
+            if ($publishAt === '') unset($meta['publish_at']);
+            else $meta['publish_at'] = $publishAt;
             $meta['tags'] = normalize_tags(ap_clean_line((string) ($fields['tags'] ?? ''), 500));
             $meta['excerpt'] = ap_clean_line((string) ($fields['excerpt'] ?? ''), 500);
             $meta['cover'] = $cover;

@@ -59,6 +59,7 @@ function ap_discovery_document(string $language, string $relativePath): ?array {
         $description = ap_discovery_text(preg_replace('/[#>*`_~]+/u', ' ', $plain) ?? $plain, 160);
     }
     $date = ap_discovery_date(is_string($meta['date'] ?? null) ? $meta['date'] : ($id === null ? '' : substr($id, 0, 10)));
+    if (ap_publish_timestamp($meta['publish_at'] ?? null) !== null) $date = $meta['publish_at'];
     clearstatcache(true, $file);
     $mtime = filemtime($file);
     $modified = is_int($mtime) && $mtime > 0 ? gmdate('c', $mtime) : null;

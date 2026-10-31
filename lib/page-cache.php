@@ -96,6 +96,11 @@ function ap_page_cache_fingerprint(): ?string {
             $bytes = file_get_contents($path, false, null, 0, AP_PAGE_CACHE_MAX_BODY + 1);
             if (!is_string($bytes) || strlen($bytes) !== $size) return null;
             hash_update($context, (string) filemtime($path) . "\0" . $bytes);
+            // A scheduled document can become public without a file edit. Change
+            // the generation at that boundary (also safe if the clock goes back).
+            if (str_starts_with($path, $CONTENT_ROOT . '/') && str_ends_with($path, '/index.md')) {
+                hash_update($context, ap_published(parse_front_matter($bytes)[0]) ? 'public' : 'private');
+            }
         }
         return hash_final($context);
     } catch (Throwable) { return null; }

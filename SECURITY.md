@@ -42,6 +42,11 @@ automated security regression tests; it has not had an independent security audi
   on their first eligible GET/HEAD, or explicitly with `./alt-cli cache:warm`.
   Set the installation's public `origin` and `base_path` before CLI warming;
   CLI commands have no visitor request from which to infer them.
+- Scheduled `publish_at` visibility is checked at request start using the server
+  clock. Cache fingerprints include each document's current publication eligibility;
+  crossing a schedule boundary invalidates indexes and prepared HTML/compressed
+  generations without cron or file edits. Invalid schedules fail private. Keep
+  the host clock accurate and retain application revalidation at any proxy.
 - Cached HTML retains its matching Content Security Policy. The policy permits
   hashes of the exact trusted inline script bodies; it does not reuse random
   nonces across cached responses or allow arbitrary inline scripts.

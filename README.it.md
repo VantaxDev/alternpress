@@ -65,6 +65,25 @@ copertina e stato bozza/pubblicato. Puoi compilare una lingua sola e tradurre
 in seguito. Non c’è traduzione automatica. La data non programma l’uscita:
 salvare una versione pubblicata la rende immediatamente visibile.
 
+Per programmare una traduzione, seleziona **Pubblicato** e imposta **Pubblica dal**,
+ad esempio `2030-03-31T09:00:00+02:00` (ora estiva di Roma), equivalente a
+`2030-03-31T07:00:00Z`. Campo vuoto significa pubblicazione immediata. Servono i
+secondi e il fuso esplicito: il fuso del sito mostrato è un riferimento, non una
+conversione automatica. Il valore viene salvato come `publish_at` nel front matter
+Markdown della singola traduzione.
+
+Prima dell’istante indicato non sono pubblici testo, metadati, URL, allegati nella
+cartella dell’articolo, archivi, tag, traduzioni, sitemap e discovery. Dall’istante
+indicato diventano visibili alla richiesta successiva; indici e cache HTML e
+compresse si rivalidano anche senza modificare file. Non servono database, cron
+o processi in background. Serve un orologio corretto sul server.
+
+La bozza resta sempre privata, anche con un orario passato. Un orario non valido
+in un file modificato a mano mantiene il contenuto privato; l’editor lo rifiuta.
+Gli articoli senza `publish_at` mantengono il comportamento precedente. L’anteprima
+richiede accesso al pannello: non ci sono link pubblici alle bozze. I media condivisi
+restano pubblici come indicato sotto. Non sono presenti ricerca pubblica o feed RSS/Atom.
+
 **+ Foto** carica una fotografia e la inserisce nel testo. Scrivi una descrizione
 alternativa e seleziona la foto. **Scegli foto** imposta la copertina. JPG, PNG e
 WebP vengono verificati, ridimensionati e riscritti rimuovendo i metadati.
