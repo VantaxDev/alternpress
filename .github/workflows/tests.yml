@@ -26,3 +26,4 @@ jobs:
           python3 tests/security-http.py
           python3 tests/discovery-http.py
           python3 tests/page-cache-http.py
+          python3 tests/password-cli.py

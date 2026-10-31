@@ -2,6 +2,8 @@
 <?php
 declare(strict_types=1);
 if (PHP_SAPI !== 'cli') { http_response_code(404); exit; }
+// Password recovery reports its own input/storage failures, including bootstrap errors.
+if (($argv[1] ?? '') === 'password') { require __DIR__ . '/bin/password.php'; exit; }
 define('AP_LIBRARY', true);
 require __DIR__ . '/index.php';
 require __DIR__ . '/lib/admin.php';

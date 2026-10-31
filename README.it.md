@@ -159,6 +159,16 @@ perso il permesso di esecuzione, usa `php alt-cli password`. Non serve conoscere
 la password precedente. Il file privato `storage/auth.php` contiene solo il suo
 hash; nessuna password in chiaro è salvata nella configurazione.
 
+Il limite è **12–72 byte**, non necessariamente caratteri: ASCII usa un byte per
+carattere, mentre un carattere UTF-8 può usarne diversi. I byte nulli sono rifiutati.
+Solo dopo il salvataggio atomico appare
+`Password CHANGED: saved successfully. Existing sessions are invalidated.`
+In caso di errore appare `Password NOT CHANGED:` con il motivo e le credenziali
+precedenti restano invariate. Codici di uscita: `0` salvata, `2` lunghezza/byte nullo
+non valido o conferma diversa, `3` errore di lettura/terminale, `4` errore di storage
+(controlla permessi, lock e spazio libero). La password non appare nei messaggi né
+nei log del comando. Il recupero via email non è implementato.
+
 ## Configurazione e trasferimento
 
 Dal pannello **Impostazioni** puoi modificare nome, simbolo del logo, descrizioni
