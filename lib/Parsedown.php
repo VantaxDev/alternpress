@@ -51,19 +51,34 @@ final class Parsedown {
         $lines = explode("\n", str_replace(["\r\n", "\r"], "\n", $markdown));
         if (count($lines) > 40000) throw new RuntimeException('Markdown contains too many lines.');
         $html = []; $paragraph = []; $list = ''; $code = null;
+        $fenceMarker = ''; $fenceLength = 0; $fenceIndent = 0;
         $flush = function() use (&$html, &$paragraph, &$list) {
             if ($paragraph) { $html[] = '<p>' . $this->inline(implode(' ', $paragraph)) . '</p>'; $paragraph = []; }
             if ($list !== '') { $html[] = '</' . $list . '>'; $list = ''; }
         };
         for ($i = 0, $count = count($lines); $i < $count; $i++) {
-            $line = rtrim($lines[$i]);
-            if (preg_match('/^\s*```/', $line)) {
-                $flush();
-                if ($code === null) $code = [];
-                else { $html[] = '<pre><code>' . $this->esc(implode("\n", $code)) . '</code></pre>'; $code = null; }
+            $rawLine = $lines[$i];
+            // Inside code, only a same-character fence at least as long as the
+            // opener can close the block. Everything else remains literal.
+            if ($code !== null) {
+                if (preg_match('/^ {0,3}(`+|~+)[ \t]*$/D', $rawLine, $m)
+                    && $m[1][0] === $fenceMarker && strlen($m[1]) >= $fenceLength) {
+                    $html[] = '<pre><code>' . $this->esc(implode("\n", $code)) . '</code></pre>';
+                    $code = null;
+                } else {
+                    $code[] = substr($rawLine, min($fenceIndent, strspn($rawLine, ' ')));
+                }
                 continue;
             }
-            if ($code !== null) { $code[] = $line; continue; }
+            // A backtick info string cannot contain backticks. Info strings
+            // are intentionally ignored, never interpolated into attributes.
+            if (preg_match('/^( {0,3})(`{3,}|~{3,})(.*)$/D', $rawLine, $m)
+                && ($m[2][0] !== '`' || !str_contains($m[3], '`'))) {
+                $flush(); $code = [];
+                $fenceMarker = $m[2][0]; $fenceLength = strlen($m[2]); $fenceIndent = strlen($m[1]);
+                continue;
+            }
+            $line = rtrim($rawLine);
             if (trim($line) === '') { $flush(); continue; }
             if (preg_match('/^(#{1,6})\s+(.*)$/', $line, $m)) {
                 $flush(); $level = strlen($m[1]); $html[] = '<h' . $level . '>' . $this->inline($m[2]) . '</h' . $level . '>'; continue;

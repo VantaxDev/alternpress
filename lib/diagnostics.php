@@ -274,15 +274,19 @@ final class AP_Diagnostics
 
     private function withoutCode(string $body): string
     {
-        $lines = preg_split('/\R/', $body) ?: [];
+        $lines = explode("\n", str_replace(["\r\n", "\r"], "\n", $body));
         $fence = null; $width = 0;
         foreach ($lines as &$line) {
-            if (preg_match('/^\s*(`{3,}|~{3,})/', $line, $match)) {
-                if ($fence === null) { $fence = $match[1][0]; $width = strlen($match[1]); }
-                elseif ($fence === $match[1][0] && strlen($match[1]) >= $width) $fence = null;
+            if ($fence !== null) {
+                if (preg_match('/^ {0,3}(`+|~+)[ \t]*$/D', $line, $match)
+                    && $fence === $match[1][0] && strlen($match[1]) >= $width) $fence = null;
                 $line = ''; continue;
             }
-            if ($fence !== null) $line = '';
+            if (preg_match('/^( {0,3})(`{3,}|~{3,})(.*)$/D', $line, $match)
+                && ($match[2][0] !== '`' || !str_contains($match[3], '`'))) {
+                $fence = $match[2][0]; $width = strlen($match[2]);
+                $line = '';
+            }
         }
         unset($line);
         return preg_replace('/(`+)[^\r\n]*?\1/', '', implode("\n", $lines)) ?? '';

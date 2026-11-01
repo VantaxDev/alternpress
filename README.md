@@ -161,6 +161,36 @@ links, pictures, quotes, ordered/unordered lists, fenced code and simple tables.
 Raw HTML is shown as text. This is a deliberately small parser, not a full
 CommonMark implementation. Translations are written by the editor, not automatic.
 
+### Fenced code examples
+
+Use at least three backticks or tildes. A closing fence must use the same
+character, be at least as long as the opener, and have only spaces/tabs after it.
+For example, four backticks let an example contain triple-backtick fences:
+
+`````markdown
+````markdown
+```php
+<?php echo "literal example";
+```
+````
+`````
+
+Openers/closers allow up to three leading spaces. Up to the opener's indentation
+is removed from each code line; other spaces and tabs are preserved. Four-space
+or tab-indented openers are not top-level fences. A backtick opener cannot have
+backticks in its info text. Info text such as `php` is accepted but ignored:
+there are no generated language classes, attributes or syntax highlighter.
+An unclosed block stays literal through the end of the document. Code is always
+HTML-escaped, and Markdown links/images/formatting inside it are not executed.
+The diagnostics link checker uses the same fence boundaries.
+
+This follows the basic fence rules in [CommonMark section 4.5](https://spec.commonmark.org/0.31.2/#fenced-code-blocks),
+not full CommonMark conformance: nested list/quote containers, indented code blocks
+and multi-backtick inline spans are outside this small parser's supported subset.
+Existing ordinary triple-backtick blocks remain supported. Malformed legacy
+blocks that relied on a short, mixed or text-suffixed closer now stay code until
+a valid closer or EOF; adjust their delimiters if that was not intended.
+
 ## Public page cache and compression
 
 AlternPress keeps prepared public HTML pages in its private `cache/` directory.
