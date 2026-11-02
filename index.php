@@ -284,7 +284,7 @@ function route_content_exists(string $contentRoot, string $language, string $rel
         return public_document_published($contentDir . '/home/index.md');
     }
 
-    if ($relativePath === '/skills' || $relativePath === '/about') {
+    if (in_array($relativePath, ['/skills', '/about', '/privacy'], true)) {
         return public_document_published($contentDir . $relativePath . '/index.md');
     }
 
@@ -596,7 +596,7 @@ function render_layout(string $language, string $relativePath, string $title, st
 
 <footer class="container footer">
 
-  <small>© <?= date('Y') ?> <div id="legal-info" class="footer-credits"> </div> <?= h($text['footer']) ?><?php if (ap_config('email') !== ''): ?> · <?= protected_email_link(ap_config('email'), 'Email') ?><?php endif; ?></small>
+  <small>© <?= date('Y') ?> <div id="legal-info" class="footer-credits"> </div> <?= h($text['footer']) ?><?php if (ap_config('email') !== ''): ?> · <?= protected_email_link(ap_config('email'), 'Email') ?><?php endif; ?><?php if (route_content_exists($CONTENT_ROOT, $language, '/privacy')): ?> · <a href="<?= h(language_url($language, '/privacy')) ?>"><?= h($language === 'it' ? 'Privacy e cookie' : 'Privacy and cookies') ?></a><?php endif; ?></small>
 </footer>
 <script>
         // Offuscamento base per impedire il facile scraping testuale della P.IVA
@@ -697,6 +697,7 @@ $special = [
     '/home' => $contentDir . '/home/index.md',
     '/about' => $contentDir . '/about/index.md',
     '/skills' => $contentDir . '/skills/index.md',
+    '/privacy' => $contentDir . '/privacy/index.md',
 ];
 
 if ($relativePath === '/') {
@@ -740,6 +741,7 @@ if ($relativePath === '/') {
 if (isset($special[$relativePath])) {
     $raw = read_file_or_404($special[$relativePath]);
     [$meta, $body] = parse_front_matter($raw);
+    if ($relativePath === '/privacy' && !ap_published($meta)) { http_response_code(404); render_layout($language, $relativePath, '404', '<h1>404</h1>'); exit; }
     render_layout(
         $language,
         $relativePath,

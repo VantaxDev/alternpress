@@ -42,6 +42,7 @@ function cli_internal_link(string $url, string $source): ?bool {
         if ($path === '/' . $language) return true;
         if (str_starts_with($path, '/' . $language . '/')) return route_content_exists(AP_ROOT . '/content', $language, substr($path, strlen($language) + 1));
     }
+    if ($path === '/privacy') return route_content_exists(AP_ROOT . '/content', DEFAULT_LANGUAGE, $path);
     if (in_array($path, ['/home', '/about', '/skills', '/archive', '/tags'], true)) return true;
     if (str_starts_with($path, '/post/') || str_starts_with($path, '/tag/')) return route_content_exists(AP_ROOT . '/content', DEFAULT_LANGUAGE, $path);
     return cli_local_file(ltrim($path, '/'));

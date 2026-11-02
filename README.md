@@ -183,14 +183,33 @@ The admin is separate: its authentication/CSRF session still requires a protecte
 session cookie scoped to `/admin/` (with the install prefix), with HttpOnly,
 SameSite=Strict and Secure on HTTPS. This is **not** a zero-cookie claim for the
 entire installation. This change does not remove admin authentication, move
-tokens into URLs or add localStorage/sessionStorage, a banner or a policy page.
+tokens into URLs or add localStorage/sessionStorage or a banner.
 
-For strict zero-cookie administration, a separate design decision is needed:
-use SSH/file editing/CLI and close the web admin after explicit approval, or
-review a non-cookie authentication architecture with equivalent authorization
-and CSRF protection. Merely disabling sessions or putting tokens in URLs is not
-an acceptable replacement. Existing server-side access/security logging remains
-unchanged; absence of public cookies does not mean absence of data processing.
+The owner may keep the necessary admin session while public browsing remains
+cookie-free. Existing server-side access/security logging is not removed by
+this change; the software still processes request information.
+
+### Optional site-specific privacy notice
+
+A published Markdown page at `content/{language}/privacy/index.md` enables a
+localised **Privacy and cookies** link in the public footer and the admin/login
+footer. Missing or draft files do not produce links, and draft content is not
+served directly. Notice addition/removal/state changes invalidate cached footer
+generations. The page uses the same safe Markdown renderer and creates no
+public cookies other than the legacy deletion header when applicable.
+
+No notice or business identity is installed by default for third-party sites.
+`website/notices/vantax.eu/` contains the owned-site factual draft payload;
+`website/notice_pages.py` generates the separate marketing site's notice drafts.
+They are not universal policies for every installation. Before calling them
+complete, review the missing owner facts in `website/notices/REVIEW.md` (legal
+basis, recipients/transfers and effective retention including inactive archives
+and backups). Verified rotation counts are not invented deletion periods.
+
+Deployment is coupled: first apply and verify public-cookie removal; only then
+publish the new cookie-free wording and linked notice payloads. The current
+coordinated public-probe pause must be lifted before ordinary live verification;
+no security bypass or unrelated pending PR deployment is permitted.
 
 ## Public page cache and compression
 

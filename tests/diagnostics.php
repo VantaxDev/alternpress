@@ -57,6 +57,14 @@ try {
     diagnostic_assert(count(array_filter($report['permissions'], static fn($row) => $row['path'] === 'content/it/post/published' && $row['type'] === 'directory')) === 1, 'Permissions must include nested directories.');
     diagnostic_assert(count(array_filter($report['permissions'], static fn($row) => $row['path'] === 'content/it/post/published/local.jpg' && $row['type'] === 'file')) === 1, 'Permissions must include nested files.');
     diagnostic_assert(is_file($temp . '/media/' . $names['orphan']), 'Diagnostics must never remove orphan candidates.');
+    // Optional notices are real routes only while their file is published.
+    diagnostic_fixture('content/it/privacy/index.md', "---\ntitle: Privacy\nstatus: published\n---\nTechnical notice.\n");
+    diagnostic_fixture('content/it/about/index.md', "[policy](/it/privacy)\n[default policy](/privacy)\n");
+    $noticeReport = ap_diagnostics($options);
+    diagnostic_assert($noticeReport['summary']['missing_links'] === 3, 'Published notice links resolve with or without language prefix.');
+    diagnostic_fixture('content/it/privacy/index.md', "---\ntitle: Privacy\nstatus: draft\n---\nPrivate draft.\n");
+    $noticeReport = ap_diagnostics($options);
+    diagnostic_assert($noticeReport['summary']['missing_links'] === 5, 'Draft notices are not considered public link destinations.');
     $discoveryLinks = ['/sitemap.xml', '/sitemap-it.xml', '/sitemap-en.xml', '/llms.txt', '/robots.txt', '/knowledge-graph.jsonld'];
     $discoveryBody = '';
     foreach ($discoveryLinks as $path) {

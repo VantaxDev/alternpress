@@ -34,3 +34,20 @@ Before changing the served directory, back up the existing installation and
 server configuration privately. Never upload the previous personal blog or
 server backups to this repository. Only this project presentation is served at
 alternpress.com; the existing testing installation is independent.
+
+## Owned-site privacy notice payloads
+
+`notice_pages.py` generates `/privacy/` and `/it/privacy/` using local CSS and
+system fonts, no scripts/storage/remote assets. The business line reuses the
+already deployed SSI year/fragments pattern, with the existing IncludesNOEXEC
+filter matching the new `index.html` files; no CSP or server config changes.
+
+These are site-specific factual drafts, not universal policies. Review
+`notices/REVIEW.md` for required facts that have not been verified. Do not claim
+that the server reads/collects nothing or that code establishes GDPR compliance.
+Do not publish the new copy independently before the public-cookie fix has been
+installed and verified through the ordinary coordinated client path.
+
+The live marketing footer already has business attribution from an earlier,
+separately authorised hunk. Do not replace it with a whole main-based build:
+apply the new notice links and narrower copy additively to preserve attribution.

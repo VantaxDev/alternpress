@@ -63,7 +63,7 @@ function ap_page_cache_fingerprint(): ?string {
         foreach (SUPPORTED_LANGUAGES as $language) {
             if (!is_string($language) || !preg_match('/\A[a-z]{2}(?:-[A-Za-z]{2,8})?\z/D', $language)) return null;
             $root = $CONTENT_ROOT . '/' . $language;
-            foreach (['home', 'skills', 'about'] as $page) $paths[] = $root . '/' . $page . '/index.md';
+            foreach (['home', 'skills', 'about', 'privacy'] as $page) $paths[] = $root . '/' . $page . '/index.md';
             // Directory presence also affects empty archives and language navigation.
             hash_update($context, $root . '/post:' . (public_path_ok($root . '/post', true) ? 'present' : 'absent'));
             foreach (list_post_dirs($root . '/post') as $directory) $paths[] = $directory . '/index.md';

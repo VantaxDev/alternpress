@@ -31,11 +31,22 @@ richiedono ciascuno una visita per eliminare i rispettivi cookie host-only.
 
 L’admin conserva la sessione necessaria per autenticazione e CSRF, limitata a
 `/admin/`, HttpOnly, SameSite=Strict e Secure su HTTPS. Non si dichiara quindi
-“zero cookie sull’intero sito”. Nessun banner, pagina informativa o sostituto in
-localStorage viene aggiunto; contenuti, footer e log del server restano invariati.
-Per un admin rigorosamente senza cookie occorre scegliere una diversa gestione
-sicura (es. SSH/CLI senza pannello web), non disabilitare la protezione delle
-sessioni o spostare token negli URL. [Dettagli tecnici](README.md#public-cookies-and-language-routing).
+“zero cookie sull’intero sito”. Nessun banner o sostituto in localStorage viene aggiunto; la sicurezza admin e i
+log del server restano invariati.
+Il titolare può mantenere questa sessione tecnica. Non si afferma che il software
+non legga dati: elabora comunque le richieste e i sistemi di sicurezza server-side.
+
+Un file Markdown pubblicato in `content/{lingua}/privacy/index.md` abilita il link
+**Privacy e cookie** nel footer pubblico e nel login/admin. Se manca o è in bozza,
+il link non compare e il contenuto privato non viene servito. Nessuna identità o
+informativa viene imposta alle installazioni di terzi: i testi per i siti del
+titolare sono payload separati in `website/notices/`.
+
+La rimozione dei cookie pubblici deve essere distribuita e verificata prima di
+pubblicare la nuova dicitura e le informative. I testi fattuali non sono una
+certificazione GDPR: restano da confermare base giuridica, destinatari/hosting,
+trasferimenti se applicabili e conservazione effettiva anche di archivi e backup.
+[Perimetro e dettagli mancanti](website/notices/REVIEW.md).
 
 ## Installazione
 

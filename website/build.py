@@ -2,6 +2,7 @@
 """Regenerate the static project website using only Python's standard library."""
 from html import escape
 from pathlib import Path
+from notice_pages import build_notices
 
 ROOT = Path(__file__).resolve().parent / 'dist'
 REPO = 'https://github.com/VantaxDev/alternpress'
@@ -75,7 +76,7 @@ COPY = {
         'closing_label': 'Less to maintain. More room to write.', 'closing_title': 'Something to say?<br><em>Start here.</em>',
         'alpha_note': 'Early release. Read the guide and keep a backup.',
         'release_link': 'Release notes', 'archive_link': 'Download .tar.gz', 'license': 'MIT license',
-        'footer': 'For those who have something to say.', 'footer_note': 'This website uses no cookies, tracking or external assets.',
+        'footer': 'For those who have something to say.', 'footer_note': 'No profiling cookies or behavioural analytics on public pages.',
         'error_title': 'This page isn’t here.', 'error_body': 'You may have followed a link to the previous website. AlternPress now has a new home for the project.', 'error_link': 'Go to the project website',
     },
     'it': {
@@ -139,7 +140,7 @@ COPY = {
         'closing_label': 'Meno da mantenere. Più spazio per scrivere.', 'closing_title': 'Qualcosa da dire?<br><em>Comincia qui.</em>',
         'alpha_note': 'Versione iniziale. Leggi la guida e conserva un backup.',
         'release_link': 'Note della release', 'archive_link': 'Scarica .tar.gz', 'license': 'Licenza MIT',
-        'footer': 'Solo per chi ha qualcosa da dire.', 'footer_note': 'Questo sito non usa cookie, tracciamento o risorse esterne.',
+        'footer': 'Solo per chi ha qualcosa da dire.', 'footer_note': 'Navigazione pubblica senza cookie di profilazione o analisi comportamentale.',
         'error_title': 'Questa pagina non c’è.', 'error_body': 'Forse hai seguito un link al vecchio sito. AlternPress ora ha una nuova casa dedicata al progetto.', 'error_link': 'Vai al sito del progetto',
     },
 }
@@ -234,13 +235,14 @@ def render(lang):
     <div class="download-links"><a href="{RELEASE}">{c['release_link']}</a><a href="{TAR}">{c['archive_link']}</a><a href="{ZIP}.sha256">SHA-256</a></div>
   </div></section>
 </main>
-<footer class="site-footer wrap"><div><a class="brand" href="{path}">alternpress<span class="brand-dot">.</span></a><p>{c['footer']}</p></div><div class="footer-right"><nav aria-label="{'Risorse' if lang == 'it' else 'Resources'}"><a href="{REPO}">GitHub ↗</a><a href="{guide}">{c['guide']}</a><a href="{RELEASE_SOURCE}/LICENSE">{c['license']}</a></nav><p>{c['footer_note']}</p></div></footer>
+<footer class="site-footer wrap"><div><a class="brand" href="{path}">alternpress<span class="brand-dot">.</span></a><p>{c['footer']}</p></div><div class="footer-right"><nav aria-label="{'Risorse' if lang == 'it' else 'Resources'}"><a href="{REPO}">GitHub ↗</a><a href="{guide}">{c['guide']}</a><a href="{RELEASE_SOURCE}/LICENSE">{c['license']}</a></nav><p>{c['footer_note']}</p><p><a href="{'/it/privacy/' if lang == 'it' else '/privacy/'}">{'Privacy e cookie' if lang == 'it' else 'Privacy and cookies'}</a></p></div></footer>
 </body>
 </html>
 '''
 
 
 def build():
+    build_notices(ROOT)
     (ROOT / 'it').mkdir(parents=True, exist_ok=True)
     for lang in COPY:
         (ROOT / ('it/index.html' if lang == 'it' else 'index.html')).write_text(render(lang), encoding='utf-8')
@@ -253,7 +255,7 @@ def build():
 ''', encoding='utf-8')
     (ROOT / '404.html').write_text('''<!doctype html>
 <html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><meta name="robots" content="noindex"><title>Page not found — AlternPress</title><link rel="icon" href="/assets/mark.svg" type="image/svg+xml"><link rel="stylesheet" href="/assets/site.css"></head>
-<body><main class="wrap error-page"><a class="brand" href="/">alternpress<span class="brand-dot">.</span></a><p class="eyebrow">404</p><h1>This page isn’t here.</h1><p>You may have followed a link to the previous website.</p><a class="button" href="/">Discover AlternPress →</a><hr><div lang="it"><h2>Questa pagina non c’è.</h2><p>Forse hai seguito un link al vecchio sito.</p><a class="text-link" href="/it/">Scopri il progetto AlternPress →</a></div></main></body></html>
+<body><main class="wrap error-page"><a class="brand" href="/">alternpress<span class="brand-dot">.</span></a><p class="eyebrow">404</p><h1>This page isn’t here.</h1><p>You may have followed a link to the previous website.</p><a class="button" href="/">Discover AlternPress →</a><hr><div lang="it"><h2>Questa pagina non c’è.</h2><p>Forse hai seguito un link al vecchio sito.</p><a class="text-link" href="/it/">Scopri il progetto AlternPress →</a></div></main><footer class="site-footer wrap"><a href="/privacy/">Privacy and cookies</a> · <a href="/it/privacy/">Privacy e cookie</a></footer></body></html>
 ''', encoding='utf-8')
     print('Built English and Italian pages, 404, robots.txt and sitemap.xml.')
 
