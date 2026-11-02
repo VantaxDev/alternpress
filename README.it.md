@@ -16,6 +16,27 @@ descrive anche struttura, permessi, ripristino e limiti del formato Markdown.
 JSON-LD, knowledge graph, sitemap multilingua e `llms.txt` vengono generati
 automaticamente dai contenuti pubblicati. Consulta la [guida alla lettura da parte delle AI](README-AI.md).
 
+## Cookie pubblici e lingua
+
+Le pagine pubbliche e gli indici non creano cookie né storage alternativi.
+La lingua resta negli URL `/it` e `/en`; la root usa `Accept-Language` o la lingua
+predefinita, senza ricordare quella di visite precedenti. Il vecchio cookie
+`alternpress_lang` non viene usato per scegliere la lingua.
+
+Se il browser invia ancora quel cookie, la successiva richiesta PHP pubblica
+riceve soltanto un header di eliminazione (`Max-Age=0`, scadenza nel 1970), sullo
+stesso host e percorso dell’installazione. Non è un nuovo cookie persistente.
+Dopo la rimozione, le richieste pubbliche non inviano `Set-Cookie`. Apex e www
+richiedono ciascuno una visita per eliminare i rispettivi cookie host-only.
+
+L’admin conserva la sessione necessaria per autenticazione e CSRF, limitata a
+`/admin/`, HttpOnly, SameSite=Strict e Secure su HTTPS. Non si dichiara quindi
+“zero cookie sull’intero sito”. Nessun banner, pagina informativa o sostituto in
+localStorage viene aggiunto; contenuti, footer e log del server restano invariati.
+Per un admin rigorosamente senza cookie occorre scegliere una diversa gestione
+sicura (es. SSH/CLI senza pannello web), non disabilitare la protezione delle
+sessioni o spostare token negli URL. [Dettagli tecnici](README.md#public-cookies-and-language-routing).
+
 ## Installazione
 
 Servono PHP 8.2+ con le estensioni mbstring, fileinfo, GD, sessioni e JSON,

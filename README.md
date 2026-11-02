@@ -161,6 +161,37 @@ links, pictures, quotes, ordered/unordered lists, fenced code and simple tables.
 Raw HTML is shown as text. This is a deliberately small parser, not a full
 CommonMark implementation. Translations are written by the editor, not automatic.
 
+## Public cookies and language routing
+
+Public HTML and discovery routes do not create cookies or replacement browser
+storage. The language is explicit in `/it` and `/en` URLs; the root negotiates
+from `Accept-Language` or the configured default. It no longer remembers a
+language from a previous visit, and old `alternpress_lang` values never influence
+routing. Root redirects are non-cacheable and vary on `Accept-Language`.
+
+A returning visitor who still sends the legacy host-only `alternpress_lang`
+cookie receives **only a deletion header** (`Max-Age=0`, expiry in 1970) on the
+next public PHP request. It uses the original install path and current host,
+including subfolder installations. This is not a new persistent preference.
+Deletion responses are private/no-store, even on a cache HIT or 304, so a shared
+cache cannot retain and replay their visitor-specific header. After the browser
+removes it, subsequent public requests have no `Set-Cookie`.
+Apex and www have independent host-only cookies: each is cleaned on a visit to
+that host. Static assets served directly by Apache do not run this migration.
+
+The admin is separate: its authentication/CSRF session still requires a protected
+session cookie scoped to `/admin/` (with the install prefix), with HttpOnly,
+SameSite=Strict and Secure on HTTPS. This is **not** a zero-cookie claim for the
+entire installation. This change does not remove admin authentication, move
+tokens into URLs or add localStorage/sessionStorage, a banner or a policy page.
+
+For strict zero-cookie administration, a separate design decision is needed:
+use SSH/file editing/CLI and close the web admin after explicit approval, or
+review a non-cookie authentication architecture with equivalent authorization
+and CSRF protection. Merely disabling sessions or putting tokens in URLs is not
+an acceptable replacement. Existing server-side access/security logging remains
+unchanged; absence of public cookies does not mean absence of data processing.
+
 ## Public page cache and compression
 
 AlternPress keeps prepared public HTML pages in its private `cache/` directory.

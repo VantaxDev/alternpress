@@ -235,11 +235,6 @@ function route_path(): string
 
 function preferred_language(): string
 {
-    $cookieLanguage = is_string($_COOKIE['alternpress_lang'] ?? null) ? strtolower($_COOKIE['alternpress_lang']) : '';
-    if (in_array($cookieLanguage, SUPPORTED_LANGUAGES, true)) {
-        return $cookieLanguage;
-    }
-
     $header = substr((string) ($_SERVER['HTTP_ACCEPT_LANGUAGE'] ?? ''), 0, 4096);
     foreach (explode(',', $header) as $candidate) {
         $languageTag = strtolower(trim(explode(';', $candidate, 2)[0]));
@@ -480,18 +475,22 @@ function nav_active(string $relativePath, string $target): string
     return '';
 }
 
-function ap_public_language_cookie(string $language): void
+/** Remove only an existing legacy preference; never create public storage. */
+function ap_expire_legacy_language_cookie(): void
 {
-    if (PHP_SAPI === 'cli' || !in_array($language, SUPPORTED_LANGUAGES, true)) return;
-    if (($_COOKIE['alternpress_lang'] ?? '') !== $language) {
-        setcookie('alternpress_lang', $language, [
-            'expires' => time() + 31536000,
-            'path' => ap_url('/'),
-            'secure' => ap_https(),
-            'httponly' => false,
-            'samesite' => 'Lax',
-        ]);
-    }
+    if (PHP_SAPI === 'cli' || !array_key_exists('alternpress_lang', $_COOKIE)) return;
+    setcookie('alternpress_lang', '', [
+        'expires' => 1,
+        'path' => ap_url('/'),
+        'secure' => ap_https(),
+        'httponly' => false,
+        'samesite' => 'Lax',
+    ]);
+    // Cache/discovery emit their own headers later. Never let a shared cache
+    // retain this visitor-specific deletion response and replay Set-Cookie.
+    header_register_callback(static function(): void {
+        header('Cache-Control: private, no-store');
+    });
 }
 
 /** Owner-supplied assets stay local; content hashes refresh browser caches. */
@@ -534,7 +533,6 @@ function render_layout(string $language, string $relativePath, string $title, st
     $themeCss = public_path_ok(__DIR__ . '/assets/theme.css');
     $favicon = public_path_ok(__DIR__ . '/assets/favicon.local.svg')
         ? '/assets/favicon.local.svg' : '/assets/favicon.svg';
-    ap_public_language_cookie($language);
     ob_start();
 ?><!doctype html>
 <html lang="<?= h($language) ?>">
@@ -656,10 +654,13 @@ if (($_GET['ap-css'] ?? null) === 'custom') {
 }
 
 
+ap_expire_legacy_language_cookie();
 $path = route_path();
 ap_discovery_dispatch($path);
 
 if ($path === '/') {
+    header('Vary: Accept-Language', false);
+    header('Cache-Control: private, no-store');
     redirect_to(language_url(preferred_language()));
 }
 
@@ -688,7 +689,6 @@ if (preg_match('#^/post/([a-z0-9]+(?:-[a-z0-9]+)*)/([^/]+\.(?:jpg|jpeg|png|webp|
     http_response_code(404); exit;
 }
 
-ap_public_language_cookie($language);
 ap_page_cache_try_serve($language, $relativePath);
 $posts = load_posts($contentDir, $CACHE_DIR, $language);
 $text = labels($language);
