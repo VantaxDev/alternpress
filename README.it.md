@@ -280,6 +280,9 @@ contiene credenziali cifrate, impostazioni e contenuti del sito. `.gitignore`
 esclude configurazione privata, credenziali, cache e foto caricate.
 
 `php tests/run.php` esegue le verifiche di regressione del renderer e dei percorsi.
+`php tests/markdown-inline.php` verifica il codice inline con più backtick,
+escaping/XSS e input malformati estesi. Vedi
+[sintassi e limiti](docs/markdown-inline-code.md).
 
 ## Sicurezza e test della versione 0.4
 

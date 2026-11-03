@@ -373,6 +373,9 @@ private articles. The example content in the clean release is generic.
 ## Checks
 
 `php tests/run.php` runs focused Markdown and path regression checks.
+`php tests/markdown-inline.php` covers matching multi-backtick inline code,
+literal/XSS handling and large malformed inputs. See
+[inline code syntax and limits](docs/markdown-inline-code.md).
 The alpha was also exercised through HTTP for authentication, CSRF, private
 paths, draft visibility, bilingual publication, uploads, conflicts and relocation.
 
