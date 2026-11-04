@@ -408,6 +408,10 @@ private articles. The example content in the clean release is generic.
 `php tests/markdown-inline.php` covers matching multi-backtick inline code,
 literal/XSS handling and large malformed inputs. See
 [inline code syntax and limits](docs/markdown-inline-code.md).
+`php tests/markdown-lists.php` covers ordered-list numbering and list boundaries.
+Ordered lists preserve their first marker (up to nine digits, including zero);
+subsequent markers do not restart numbering. Longer markers retain the legacy
+default start of 1. This is not a general CommonMark list parser.
 The alpha was also exercised through HTTP for authentication, CSRF, private
 paths, draft visibility, bilingual publication, uploads, conflicts and relocation.
 

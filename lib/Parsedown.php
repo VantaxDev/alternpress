@@ -142,7 +142,14 @@ final class Parsedown {
             }
             if (preg_match('/^\s*(?:([-*+])|([0-9]+)\.)\s+(.*)$/', $line, $m)) {
                 $type = $m[1] !== '' ? 'ul' : 'ol';
-                if ($list !== $type) { $flush(); $html[] = '<' . $type . '>'; $list = $type; }
+                if ($list !== $type) {
+                    $flush();
+                    // Only the first marker sets the start. Bound conversion
+                    // to nine digits; retain legacy rendering for longer runs.
+                    $start = $type === 'ol' && strlen($m[2]) <= 9 ? (int)$m[2] : 1;
+                    $html[] = '<' . $type . ($start !== 1 ? ' start="' . $start . '"' : '') . '>';
+                    $list = $type;
+                }
                 $html[] = '<li>' . $this->inline($m[3]) . '</li>'; continue;
             }
             if (preg_match('/^\s*>\s?(.*)$/', $line, $m)) {
