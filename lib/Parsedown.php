@@ -140,6 +140,11 @@ final class Parsedown {
             if (preg_match('/^(#{1,6})\s+(.*)$/', $line, $m)) {
                 $flush(); $level = strlen($m[1]); $html[] = '<h' . $level . '>' . $this->inline($m[2]) . '</h' . $level . '>'; continue;
             }
+            // Thematic breaks take precedence over list markers. Require at
+            // least three identical markers; spaces/tabs may separate them.
+            if (preg_match('/^ {0,3}(?:(?:-[ \t]*){3,}|(?:\*[ \t]*){3,}|(?:_[ \t]*){3,})$/D', $line)) {
+                $flush(); $html[] = '<hr>'; continue;
+            }
             if (preg_match('/^\s*(?:([-*+])|([0-9]+)\.)\s+(.*)$/', $line, $m)) {
                 $type = $m[1] !== '' ? 'ul' : 'ol';
                 if ($list !== $type) {
@@ -155,7 +160,6 @@ final class Parsedown {
             if (preg_match('/^\s*>\s?(.*)$/', $line, $m)) {
                 $flush(); $html[] = '<blockquote>' . $this->inline($m[1]) . '</blockquote>'; continue;
             }
-            if (preg_match('/^\s*(?:---+|\*\*\*+)\s*$/', $line)) { $flush(); $html[] = '<hr>'; continue; }
             if (str_contains($line, '|') && isset($lines[$i + 1])) {
                 $headers = $this->cells($line); $delimiters = $this->cells($lines[$i + 1]);
                 $valid = count($headers) === count($delimiters) && count($headers) > 1;
