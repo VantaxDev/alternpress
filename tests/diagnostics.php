@@ -37,6 +37,9 @@ try {
         . "[canonical](https://blog.example/it/post/other)\n[external](https://external.example/post)\n[private](http://127.0.0.1/admin)\n"
         . "[anchor](#heading)\n`[inline](/missing-code)`\n``[multi](/missing-multicode)``\n"
         . "```md\n![code](/missing-code.jpg)\n```\n~~~\n[tilde](/missing-tilde)\n~~~\n"
+        . "````md\n```` trailing text\n[still-code](/missing-premature-close)\n````\n"
+        . "~~~\n```\n![mixed-code](/missing-mixed-fence)\n~~~\n"
+        . "```bad`info\n"
         . "![missing](/media/missing.jpg)\n[missing](/it/post/missing)\n[draft](/it/post/draft)\n");
     diagnostic_fixture('content/it/post/published/local.jpg', 'test-image');
     diagnostic_fixture('content/it/post/other/index.md', "---\ntitle: Other\ncover: cover-local.jpg\n---\nOther\n");

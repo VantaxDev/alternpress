@@ -272,22 +272,6 @@ final class AP_Diagnostics
         foreach ($matches as $match) $this->checkLink($match[1] !== '' ? $match[1] : (($match[2] ?? '') !== '' ? $match[2] : ($match[3] ?? '')), $source, $context, true);
     }
 
-    private function withoutCode(string $body): string
-    {
-        $lines = preg_split('/\R/', $body) ?: [];
-        $fence = null; $width = 0;
-        foreach ($lines as &$line) {
-            if (preg_match('/^\s*(`{3,}|~{3,})/', $line, $match)) {
-                if ($fence === null) { $fence = $match[1][0]; $width = strlen($match[1]); }
-                elseif ($fence === $match[1][0] && strlen($match[1]) >= $width) $fence = null;
-                $line = ''; continue;
-            }
-            if ($fence !== null) $line = '';
-        }
-        unset($line);
-        return preg_replace('/(`+)[^\r\n]*?\1/', '', implode("\n", $lines)) ?? '';
-    }
-
     public function run(): array
     {
         clearstatcache();
@@ -309,7 +293,11 @@ final class AP_Diagnostics
             // Posts explicitly rewrite relative links to a directory URL. Pages use the browser's document URL.
             $context = $post ? $route . '/' : $route;
             if (preg_match('~^/([^/]+)/home$~', $route, $home)) $context = '/' . $home[1];
-            $html = $renderer->text($this->withoutCode($document['body']));
+            // Use the renderer as the single authority for code boundaries.
+            // Code contents are HTML-escaped, so they cannot generate a/img
+            // tags for extraction. Stripping source first can hide visible
+            // links or manufacture links across removed spans/block boundaries.
+            $html = $renderer->text($document['body']);
             preg_match_all('~<(a|img)\b[^>]*\b(?:href|src)="([^"]*)"~i', $html, $links, PREG_SET_ORDER);
             $seen = [];
             foreach ($links as $link) {

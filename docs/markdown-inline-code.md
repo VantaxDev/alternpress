@@ -1,48 +1,78 @@
-# Matching inline code delimiters
+# Supported Markdown code and images
 
-Use a run of backticks at each end of inline code. The closing run must have
-exactly the same length; shorter or longer runs inside remain literal. For
-example, the source `Use ``a`b`` safely.` renders the code text **a`b** between
-“Use” and “safely.” This also works in headings, list items, quotes, table cells
-and supported link labels. Existing single-backtick spans continue to work.
+AlternPress uses a small bundled renderer, not the upstream Parsedown library.
+The rules below are a bounded Markdown subset, not full CommonMark compliance.
+Public rendering and authenticated editor preview share the same renderer.
+Raw HTML is escaped and generated URL attributes are validated.
+
+## Inline code
+
+Use a run of backticks at each end. The closing run must have exactly the same
+length; shorter or longer runs inside stay literal. For example,
+``Use `x` safely.`` contains the code text `x`. To include a backtick, use longer
+delimiters: the source ````Use ``a`b`` safely.```` has code text **a`b**.
 
 Unmatched runs stay literal rather than being reinterpreted as smaller pairs.
-When both ends of a span contain an ASCII space, remove one at each end unless
-the entire content is spaces; other internal spacing/tabs stay unchanged.
-HTML, entities and Markdown inside code are displayed literally, never executed.
-Raw HTML and unsafe link destinations remain rejected outside code too.
+Remove exactly one ASCII space at each end if both ends contain a space, unless
+the entire content is spaces. Other spaces and tabs stay unchanged. HTML,
+entities, links and formatting inside code are literal text, never executed.
+Headings, lists, quotes, table cells and supported link labels use these rules.
+Table separators still need escaping; multiline/container parsing is not added.
 
-The delimiter/padding rules follow the
+Delimiter/padding rules follow the scoped
 [CommonMark code-span definition](https://spec.commonmark.org/0.31.2/#code-spans).
-This is a bounded compatibility improvement, **not full CommonMark compliance**:
-the existing block parser, paragraph line joining, table-cell splitting and link
-syntax are unchanged. In particular, escape table separator pipes as before;
-this does not add multiline/container parsing or the separate block-fence work.
-Image-description parsing is unchanged, not promised as full inline markup.
+Matching uses two scans and a last-run-position lookup, avoiding repeated suffix
+searches for unmatched openers. Existing 2 MiB/40,000-line limits remain.
 
-No package, database, configuration, network resource or client script is added.
-The bundled `Parsedown` class is this project's small renderer, not an upstream
-library upgrade. Matching uses two linear scans with a last-position map keyed
-by run length, avoiding repeated suffix searches for unmatched openers.
-Existing 2 MiB/40,000-line input limits still apply. The PHP regression suite
-automatically includes `tests/markdown-inline.php`: delimiter combinations,
-literal HTML/unsafe URLs/token sentinels, link labels, fenced examples and large
-paired, unmatched and link-heavy inputs. Timing is informational, not a flaky
-wall-clock assertion. Public rendering and authenticated preview share it.
+## Fenced code blocks
 
-## Independent block-fence PR
+A fence has at least three backticks or tildes, with zero to three leading
+spaces. A closing fence uses the same marker, at least the opening length,
+and only trailing spaces/tabs. Shorter, mixed or text-suffixed markers stay
+literal inside the block. Unclosed fences remain escaped code through EOF.
+At most the opener's indentation is removed from content lines; trailing
+spaces/tabs are preserved. Opening info strings are ignored, not inserted as
+HTML attributes. Backtick info strings cannot themselves contain backticks.
 
-This change does not include or modify pending block-fence PR #11. Its parser
-patch applies alongside these inline changes. One of its tests expects the old
-partial single-backtick interpretation of an invalid block opener; when combining
-the changes, that expectation must become literal unmatched runs instead. This
-was checked only in a disposable combined fixture, not by updating that PR.
+These are scoped rules from the
+[CommonMark fenced-code definition](https://spec.commonmark.org/0.31.2/#fenced-code-blocks),
+not support for general nested containers or syntax highlighting.
+
+## Images and linked images
+
+Matched code spans in image descriptions contribute plain text to the escaped
+`alt` attribute. For example, ``![Read `x`](/pic.png)`` has alt text “Read x”.
+Other formatting markers in image descriptions remain literal. Code text is
+restored before attribute escaping; code HTML is never inserted in an alt.
+Normal link labels retain their supported inline formatting.
+
+`[![alt](/image.png)](/destination)` is supported when the link label contains
+exactly one image, without extra whitespace, text or images. Both URLs use the
+existing validation. Optional quoted titles are accepted but ignored.
+One non-repeating pass over typed image tokens handles this form; code/anchor
+tokens cannot qualify and token HTML is never reparsed.
+
+Mixed text/image labels, multiple images in one link, image-in-image labels,
+arbitrarily nested links and URLs with parentheses remain unsupported. Outer
+unsupported syntax stays literal around any supported inner element. No nested
+anchor is generated. Fenced/inline code is never reinterpreted.
+
+## Diagnostics and tests
+
+Diagnostics extracts targets from the renderer's HTML, so literal code and alt
+text cannot create fake targets or hide real links with unmatched delimiters.
+It checks both actual targets of linked images, without fetching remote URLs.
+
+The standard PHP test loop includes `markdown-inline.php`, `markdown-fences.php`,
+`markdown-images.php`, `markdown-linked-images.php` and `diagnostics-markdown.php`.
+They cover escaping, malformed input, token boundaries and bounded large inputs.
+Timing is informational, not a wall-clock assertion.
 
 ## Italiano
 
-Per mostrare un backtick nel codice inline, delimita il frammento con due o più
-backtick: apertura e chiusura devono avere esattamente la stessa lunghezza.
-Le sequenze di altra lunghezza restano testo del codice; quelle senza chiusura
-restano letterali. Il contenuto non viene interpretato come HTML o altro Markdown.
-Il parser dei blocchi e le fence non cambiano; non è una promessa di compatibilità
-CommonMark completa. Nessun database o nuova dipendenza.
+Il codice inline richiede delimitatori di backtick della stessa lunghezza;
+sequenze senza chiusura restano letterali. Le fence supportano backtick o tilde:
+la chiusura deve usare lo stesso carattere e una lunghezza almeno uguale.
+Il codice nell'alt delle immagini diventa testo escapato. Un link può contenere
+esattamente una sola immagine, senza altri elementi nell'etichetta. Non si tratta
+di un parser CommonMark completo; HTML grezzo e URL non sicuri restano esclusi.
