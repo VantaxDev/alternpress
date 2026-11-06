@@ -33,6 +33,9 @@ literal inside the block. Unclosed fences remain escaped code through EOF.
 At most the opener's indentation is removed from content lines; trailing
 spaces/tabs are preserved. Opening info strings are ignored, not inserted as
 HTML attributes. Backtick info strings cannot themselves contain backticks.
+A valid fence may start directly after a table, without a blank line, even if
+its ignored info string contains `|`. The table ends before the fence; pipe
+characters and link/image examples inside the code stay literal.
 
 These are scoped rules from the
 [CommonMark fenced-code definition](https://spec.commonmark.org/0.31.2/#fenced-code-blocks),
