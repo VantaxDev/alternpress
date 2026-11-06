@@ -1,4 +1,4 @@
-# Supported Markdown code and images
+# Supported Markdown rules and limits
 
 AlternPress uses a small bundled renderer, not the upstream Parsedown library.
 The rules below are a bounded Markdown subset, not full CommonMark compliance.
@@ -59,12 +59,22 @@ anchor is generated. Fenced/inline code is never reinterpreted.
 
 ## Diagnostics and tests
 
+Ordered lists preserve their first numeric marker (up to nine digits, including
+zero). Later markers do not restart numbering; longer markers retain the legacy
+default start of 1. Lists are not a general nested-container implementation.
+
+Thematic breaks use at least three identical `-`, `*` or `_` markers, optionally
+separated by spaces/tabs, with at most three leading spaces. They take precedence
+over list markers, close a preceding list and interrupt a paragraph. They remain
+literal inside fenced code. Mixed markers and trailing text are not breaks.
+
 Diagnostics extracts targets from the renderer's HTML, so literal code and alt
 text cannot create fake targets or hide real links with unmatched delimiters.
 It checks both actual targets of linked images, without fetching remote URLs.
 
 The standard PHP test loop includes `markdown-inline.php`, `markdown-fences.php`,
-`markdown-images.php`, `markdown-linked-images.php` and `diagnostics-markdown.php`.
+`markdown-images.php`, `markdown-linked-images.php`, `markdown-lists.php`,
+`markdown-thematic-breaks.php` and `diagnostics-markdown.php`.
 They cover escaping, malformed input, token boundaries and bounded large inputs.
 Timing is informational, not a wall-clock assertion.
 

@@ -421,8 +421,8 @@ Version 0.4 hardens filesystem boundaries, session and form validation, image
 uploads, draft visibility, Markdown rendering and backup restore. See
 [SECURITY.md](SECURITY.md) for the deployment boundary and interruption recovery.
 
-Run every `tests/*.php` file with PHP, followed by
-`python3 tests/security-http.py`, `python3 tests/discovery-http.py` and
-`python3 tests/page-cache-http.py`. Tests create temporary fixtures with generic
+Run every `tests/*.php` file with PHP, followed by every `tests/*.py` file with
+Python 3, including the password CLI regression. CI discovers both file sets
+automatically. Tests create temporary fixtures with generic
 data; they do not modify a live installation. Python is used only for HTTP tests,
 not by the application. GitHub CI repeats the suite on pushes and pull requests.
