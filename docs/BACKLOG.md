@@ -17,11 +17,20 @@ Invalid backtick info, short markers and unsupported indentation stay rows.
 table body, EOF, near closers, CRLF, diagnostics, public/editor rendering and
 500 alternating table/fence blocks. No broader table grammar is introduced.
 
-## P2 — Investigate remaining table/block interruption rules
+## P2 — Table/block interruption rules (implemented, awaiting review)
 
-Before extending table parsing, define supported behavior for pipe-bearing
-headings, list items and quotes after a table; add exact before/after regression
-cases. This candidate only fixes the already-supported fenced-code boundary.
+Pipe-bearing headings, list items and quotes now end a preceding table without
+a blank line, using exactly the same patterns as standalone blocks. Previously
+they became rows; extra cells, including real link targets, could be discarded.
+`tests/markdown-table-blocks.php` covers exact HTML, header-only tables, supported
+indentation, invalid lookalikes, explicit pipe-prefixed rows, CRLF, EOF,
+diagnostics, public/editor rendering and 500 alternating tables/blocks.
+This is a local follow-up stacked on the P1 candidate, not merged or deployed.
+
+The existing heading/list/quote grammar is preserved, including its indentation
+limits and flat containers. To keep a marker-bearing line as a table row, use
+an explicit leading `|`. General table escaping and nested containers remain
+separate work; they are not broadened by this boundary fix.
 
 ## P3 — Deliberate Markdown subset limits
 
