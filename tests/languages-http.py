@@ -142,7 +142,7 @@ $_SERVER['SCRIPT_NAME']='/blog/index.php';require __DIR__.'/site/index.php';
         expect(location() == prefix + '/en', 'explicit configured default controls fresh root visits')
         expect(location({'Accept-Language': 'it;q=0.3, de-DE;q=0.9'}) == prefix + '/de', 'Accept-Language respects quality and primary-language matching')
         expect(location({'Accept-Language': 'it;q=0, de;q=0.8'}) == prefix + '/de', 'zero-quality language is not selected')
-        expect(location({'Cookie': 'alternpress_lang=it', 'Accept-Language': 'de'}) == prefix + '/it', 'enabled cookie preference wins over browser language')
+        expect(location({'Cookie': 'alternpress_lang=it', 'Accept-Language': 'de'}) == prefix + '/de', 'legacy cookie does not override configured browser-language negotiation')
         for path in ['/../de', '/de/%2e%2e/en', '/%2e%2e/en', '/de%2fen', '/de/%2fetc']:
             status, _, returned = request(path, opener=no_redirect)
             expect(status in (403, 404), 'malformed/traversal language route is rejected: ' + path + ' status=' + str(status) + ' location=' + returned.get('Location', ''))

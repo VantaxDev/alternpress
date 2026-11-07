@@ -8,6 +8,11 @@ recovery must not depend on the broken code it is repairing.
 
 ## Commands
 
+The code package also carries the required GPL license, project/previous MIT
+notices and configured-language runtime. Site configuration/content remain excluded.
+Use the trusted updater from this integrated revision; older updater allowlists
+do not accept these required license paths.
+
 On a trusted, reviewed release tree, build the code-only package:
 
 ```sh
