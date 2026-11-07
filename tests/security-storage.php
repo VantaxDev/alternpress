@@ -5,7 +5,7 @@ $source = dirname(__DIR__);
 $fixture = sys_get_temp_dir() . '/alternpress-storage-test-' . bin2hex(random_bytes(6));
 mkdir($fixture, 0700); mkdir($fixture . '/lib', 0700); mkdir($fixture . '/storage', 0700);
 copy($source . '/config.php', $fixture . '/config.php');
-foreach (['bootstrap.php', 'update-health.php', 'update-release.php'] as $file) copy($source . '/lib/' . $file, $fixture . '/lib/' . $file);
+foreach (['bootstrap.php', 'languages.php', 'update-health.php', 'update-release.php'] as $file) copy($source . '/lib/' . $file, $fixture . '/lib/' . $file);
 require $fixture . '/lib/bootstrap.php';
 $count = 0;
 function storage_check(bool $value, string $label): void { global $count; if (!$value) throw new RuntimeException($label); $count++; echo 'PASS ' . $label . "\n"; }

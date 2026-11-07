@@ -36,10 +36,11 @@ function ap_save_settings(array $input, string $section): void {
         $values = $old['values'] ?? [];
         if ($section === 'site') {
             $updates = [];
-            foreach (['name' => 120, 'logo_mark' => 12, 'email' => 254, 'legal' => 1000, 'site_url' => 500, 'default_language' => 2] as $key => $limit) $updates[$key] = ap_setting_text($input, $key, $limit);
+            foreach (['name' => 120, 'logo_mark' => 12, 'email' => 254, 'legal' => 1000, 'site_url' => 500, 'default_language' => 35] as $key => $limit) $updates[$key] = ap_setting_text($input, $key, $limit);
             if ($updates['name'] === '') throw new RuntimeException(t('Inserisci il nome del sito.', 'Enter a site name.'));
             if ($updates['email'] !== '' && !filter_var($updates['email'], FILTER_VALIDATE_EMAIL)) throw new RuntimeException(t('Indirizzo email non valido.', 'Invalid email address.'));
             if (!in_array($updates['default_language'], SUPPORTED_LANGUAGES, true)) throw new RuntimeException(t('Lingua non valida.', 'Invalid language.'));
+            if (ap_config('default_language_locked') && $updates['default_language'] !== DEFAULT_LANGUAGE) throw new RuntimeException('Default language is set in config.local.php.');
             $url = rtrim($updates['site_url'], '/');
             if ($url !== '') {
                 $parts = parse_url($url);
@@ -51,7 +52,8 @@ function ap_save_settings(array $input, string $section): void {
             $updates['posts_per_page'] = $count;
             $updates['search_indexing'] = ($input['search_indexing'] ?? '') === '1';
             foreach (['description' => 500, 'tagline' => 1000] as $key => $limit) {
-                if (!is_array($input[$key] ?? null)) throw new RuntimeException(t('Compila i campi per entrambe le lingue.', 'Complete the fields for both languages.'));
+                if (!is_array($input[$key] ?? null) || array_diff(array_keys($input[$key]), SUPPORTED_LANGUAGES)) throw new RuntimeException(t('Compila i campi per le lingue abilitate.', 'Complete the fields for enabled languages.'));
+                $updates[$key] = ap_config($key); // Retain disabled-language metadata for later re-enabling.
                 foreach (SUPPORTED_LANGUAGES as $language) $updates[$key][$language] = ap_setting_text($input[$key], $language, $limit);
             }
             if (!is_string($input['custom_css'] ?? null)) throw new RuntimeException('Invalid CSS.');
