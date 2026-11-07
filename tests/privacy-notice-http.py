@@ -1,4 +1,4 @@
-"""Optional file-backed notices and owner-only draft payloads; no live requests."""
+"""Optional file-backed synthetic notices; no owner payloads or live requests."""
 from pathlib import Path
 import http.cookies
 import re
@@ -53,15 +53,15 @@ $_SERVER['SCRIPT_NAME']='/installed/index.php'; require __DIR__.'/site/index.php
         for lang in ['it', 'en']:
             target = root/f'content/{lang}/privacy/index.md'
             target.parent.mkdir(parents=True, exist_ok=True)
-            shutil.copyfile(source/f'website/notices/vantax.eu/{lang}/index.md', target)
+            target.write_text(f'---\ntitle: Fixture notice {lang}\nstatus: published\n---\n# Fixture notice {lang}\n\nSynthetic-only notice. CONTROL-ONLY-{lang}\n\n[Contact](mailto:notice@example.org)\n')
         for lang in ['it', 'en']:
             status, home, headers = request('/'+lang)
             expect(status == 200 and f'href="/installed/{lang}/privacy"' in home, lang+' home footer links to the installed notice')
             expect(headers.get('X-AlternPress-Cache') == 'MISS', lang+' notice installation invalidates cached footer generation')
             status, html, headers = request('/'+lang+'/privacy')
-            expect(status == 200 and 'SERVER TAMER DI DANIELE VANTAGGIATO' in html, lang+' owner notice renders')
-            expect('Accept-Language' in html and 'Apache' in html and 'IMMUTION' in html and 'alternpress_eadbca56ea89' in html, lang+' notice discloses request processing, logs and necessary admin session')
-            expect('14' in html and '30' in html and 'backup' in html.lower(), lang+' verified rotation counts are distinguished from backup retention')
+            expect(status == 200 and f'Fixture notice {lang}' in html, lang+' supplied fixture notice renders')
+            expect('Synthetic-only notice.' in html and f'CONTROL-ONLY-{lang}' in html, lang+' exact supplied synthetic content rendered')
+            expect(headers.get('Content-Type','').startswith('text/html'), lang+' notice has HTML response type')
             expect(not headers.get_all('Set-Cookie'), lang+' fresh notice page creates no public cookies')
             expect('data-e=' in html and '<script>alert' not in html, lang+' contact is protected by existing renderer, not an external service')
             other = 'en' if lang == 'it' else 'it'
@@ -87,16 +87,19 @@ $_SERVER['SCRIPT_NAME']='/installed/index.php'; require __DIR__.'/site/index.php
         expect(status == 404 and 'PRIVATE-NOTICE-DRAFT' not in html, 'draft notice body does not leak through direct URL')
         _, html, _ = request('/it/privacy')
         expect('href="/installed/en/privacy"' not in html, 'alternate language never points to draft notice')
+        en.write_text(en.read_text().replace('status: draft', 'status: published\npublish_at: 2099-01-01T00:00:00Z'))
+        for path in ['/en', '/admin/?ui=en']:
+            status, html, _ = request(path)
+            expect(status == 200 and 'href="/installed/en/privacy"' not in html, 'scheduled notice stays private in public/login navigation: '+path)
+        expect(request('/en/privacy')[0] == 404, 'future supplied notice is not served before publication')
         en.unlink()
         for path in ['/en', '/admin/?ui=en']:
             status, html, _ = request(path)
             expect(status == 200 and 'href="/installed/en/privacy"' not in html, 'removed fixture notice has no broken public/login link: '+path)
-        expect('info@vantax.eu' in (source/'website/notice_pages.py').read_text(), 'marketing notice uses the verified public owner contact')
+        expect(not (source/'website/notice_pages.py').exists(), 'no incomplete owner-specific notice generator bundled')
+        expect(not (source/'website/notices').exists(), 'no customer/site policy payload bundled')
         for path in ['privacy/index.html','it/privacy/index.html']:
-            html = (source/'website/dist'/path).read_text()
-            expect('Accept-Language' not in html and 'Apache' in html and '14' in html and 'vantax.eu' in html, 'marketing copy is scoped to the static website: '+path)
-            expect('<script' not in html and '<iframe' not in html and 'fonts.googleapis' not in html and 'localStorage.' not in html, 'static notice adds no executable script, embed, remote font or storage: '+path)
-            expect('<!--#echo var="DATE_LOCAL" -->' in html and 'MIT' in html, 'static notice preserves dynamic business year and upstream attribution: '+path)
+            expect(not (source/'website/dist'/path).exists(), 'no unreviewed static policy published: '+path)
     finally:
         server.terminate(); server.wait(timeout=10); log.close()
 print(f'{checks} privacy notice HTTP checks passed.')
