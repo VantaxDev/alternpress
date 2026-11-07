@@ -1,5 +1,10 @@
 # Changelog
 
+## Unreleased
+
+- Fix false missing-link reports in `alt-cli links:check` for generated discovery
+  resources, including language sitemaps and installations in a subdirectory.
+
 ## 0.5.0-alpha — 2026-10-29
 
 - Generate safe Schema.org JSON-LD on published pages and articles, with stable
