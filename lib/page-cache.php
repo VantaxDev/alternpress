@@ -200,6 +200,7 @@ function ap_page_cache_unacceptable(): void {
 
 function ap_page_cache_try_serve(string $language, string $path): void {
     $GLOBALS['AP_PAGE_CACHE_REQUEST'] = null;
+    if (ap_update_probe() !== '') return;
     try {
         if (!ap_page_cache_eligible($language, $path)) return;
         $fingerprint = ap_page_cache_fingerprint();
@@ -308,6 +309,14 @@ function ap_page_cache_prune(): void {
 }
 
 function ap_page_cache_finish(string $language, string $path, string $html, string $csp): void {
+    if (ap_update_probe() !== '') {
+        header('Content-Type: text/html; charset=utf-8');
+        header('Content-Security-Policy: ' . $csp);
+        header('Cache-Control: no-store');
+        header('X-AlternPress-Cache: BYPASS');
+        echo $html;
+        return;
+    }
     $request = $GLOBALS['AP_PAGE_CACHE_REQUEST'] ?? null;
     $representations = ['identity' => $html]; $status = 'BYPASS'; $lock = null;
     try {

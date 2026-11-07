@@ -407,6 +407,10 @@ private articles. The example content in the clean release is generic.
 
 ## Checks
 
+For reviewed code-only packages, automatic rollback and interruption recovery,
+see [the short update guide](UPDATE.md). The updater is opt-in, not an automatic
+installation or a promise of zero downtime.
+
 `php tests/run.php` runs focused Markdown and path regression checks.
 `php tests/markdown-inline.php` covers matching multi-backtick inline code,
 literal/XSS handling and large malformed inputs. See

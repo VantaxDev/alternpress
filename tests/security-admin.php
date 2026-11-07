@@ -8,7 +8,7 @@ $fixture = sys_get_temp_dir() . '/alternpress-admin-security-' . bin2hex(random_
 mkdir($fixture, 0700);
 foreach (['lib', 'storage', 'media', 'cache', 'sessions', 'content/it/post', 'content/en/post'] as $directory) mkdir($fixture . '/' . $directory, 0700, true);
 copy($source . '/config.php', $fixture . '/config.php');
-foreach (['bootstrap.php', 'settings.php', 'admin.php', 'page-cache.php'] as $file) copy($source . '/lib/' . $file, $fixture . '/lib/' . $file);
+foreach (['bootstrap.php', 'update-health.php', 'update-release.php', 'settings.php', 'admin.php', 'page-cache.php'] as $file) copy($source . '/lib/' . $file, $fixture . '/lib/' . $file);
 require $fixture . '/lib/bootstrap.php';
 require $fixture . '/lib/page-cache.php';
 require $fixture . '/lib/admin.php';

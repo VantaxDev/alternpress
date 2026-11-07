@@ -6,7 +6,7 @@ $source = dirname(__DIR__);
 $fixture = sys_get_temp_dir() . '/alternpress-discovery-' . bin2hex(random_bytes(6));
 mkdir($fixture, 0700);
 foreach (['lib', 'cache', 'storage', 'media', 'content/it/home', 'content/en/home', 'content/it/about', 'content/en/about', 'content/it/skills', 'content/en/skills'] as $directory) mkdir($fixture . '/' . $directory, 0700, true);
-foreach (['index.php', 'config.php', 'lib/bootstrap.php', 'lib/Parsedown.php', 'lib/discovery.php', 'lib/page-cache.php'] as $file) copy($source . '/' . $file, $fixture . '/' . $file);
+foreach (['index.php', 'config.php', 'lib/bootstrap.php', 'lib/update-health.php', 'lib/update-release.php', 'lib/Parsedown.php', 'lib/discovery.php', 'lib/page-cache.php'] as $file) copy($source . '/' . $file, $fixture . '/' . $file);
 file_put_contents($fixture . '/config.local.php', "<?php return " . var_export([
     'name' => 'Discovery fixture',
     'origin' => 'https://origin.example',

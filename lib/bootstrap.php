@@ -13,6 +13,8 @@ if (PHP_SAPI !== 'cli') {
 define('AP_ROOT', dirname(__DIR__));
 define('AP_STORAGE', AP_ROOT . '/storage');
 const AP_EDITABLE_SETTINGS = ['name', 'logo_mark', 'email', 'legal', 'tagline', 'description', 'default_language', 'posts_per_page', 'search_indexing', 'site_url', 'custom_css'];
+require_once __DIR__ . '/update-health.php';
+ap_update_gate();
 ap_assert_path(AP_ROOT . '/config.php');
 $AP_CONFIG = require AP_ROOT . '/config.php';
 ap_assert_path(AP_ROOT . '/config.local.php');
