@@ -3,10 +3,11 @@ declare(strict_types=1);
 
 // Private CLI renderer. Apache denies /bin; this guard also covers other servers.
 if (PHP_SAPI !== 'cli') { http_response_code(404); exit; }
+require_once dirname(__DIR__) . '/lib/languages.php';
 if (count($argv) !== 6 || $argv[1] !== '--render') { fwrite(STDERR, "Internal AlternPress cache worker. Use alt-cli cache:warm.\n"); exit(2); }
 [$script, $operation, $base, $origin, $language, $path] = $argv;
 if (($base !== '' && (!str_starts_with($base, '/') || str_ends_with($base, '/') || str_contains($base, '//') || preg_match('~[\x00-\x20\x7f?#\\\\]|(?:^|/)\.{1,2}(?:/|$)~', $base)))
-    || !preg_match('/\A[a-z]{2}(?:-[A-Za-z]{2,8})?\z/D', $language)
+    || !ap_language_code_valid($language)
     || strlen($path) > 512 || !str_starts_with($path, '/') || str_contains($path, '?') || str_contains($path, '#') || preg_match('/[\x00-\x20\x7f\\\\]/', $path)) exit(2);
 $parts = parse_url($origin);
 if (!is_array($parts) || !filter_var($origin, FILTER_VALIDATE_URL) || !in_array($parts['scheme'] ?? '', ['http', 'https'], true) || !isset($parts['host']) || isset($parts['user']) || isset($parts['pass']) || isset($parts['query']) || isset($parts['fragment']) || (($parts['path'] ?? '') !== '' && $parts['path'] !== '/')) exit(2);

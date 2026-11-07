@@ -61,9 +61,9 @@ function ap_page_cache_fingerprint(): ?string {
         hash_update($context, json_encode($encoder, JSON_THROW_ON_ERROR));
         $paths = [];
         foreach (SUPPORTED_LANGUAGES as $language) {
-            if (!is_string($language) || !preg_match('/\A[a-z]{2}(?:-[A-Za-z]{2,8})?\z/D', $language)) return null;
+            if (!ap_language_code_valid($language)) return null;
             $root = $CONTENT_ROOT . '/' . $language;
-            foreach (['home', 'skills', 'about'] as $page) $paths[] = $root . '/' . $page . '/index.md';
+            foreach (['home', 'skills', 'about', 'privacy'] as $page) $paths[] = $root . '/' . $page . '/index.md';
             // Directory presence also affects empty archives and language navigation.
             hash_update($context, $root . '/post:' . (public_path_ok($root . '/post', true) ? 'present' : 'absent'));
             foreach (list_post_dirs($root . '/post') as $directory) $paths[] = $directory . '/index.md';
@@ -96,6 +96,11 @@ function ap_page_cache_fingerprint(): ?string {
             $bytes = file_get_contents($path, false, null, 0, AP_PAGE_CACHE_MAX_BODY + 1);
             if (!is_string($bytes) || strlen($bytes) !== $size) return null;
             hash_update($context, (string) filemtime($path) . "\0" . $bytes);
+            // A scheduled document can become public without a file edit. Change
+            // the generation at that boundary (also safe if the clock goes back).
+            if (str_starts_with($path, $CONTENT_ROOT . '/') && str_ends_with($path, '/index.md')) {
+                hash_update($context, ap_published(parse_front_matter($bytes)[0]) ? 'public' : 'private');
+            }
         }
         return hash_final($context);
     } catch (Throwable) { return null; }
@@ -200,6 +205,7 @@ function ap_page_cache_unacceptable(): void {
 
 function ap_page_cache_try_serve(string $language, string $path): void {
     $GLOBALS['AP_PAGE_CACHE_REQUEST'] = null;
+    if (ap_update_probe() !== '') return;
     try {
         if (!ap_page_cache_eligible($language, $path)) return;
         $fingerprint = ap_page_cache_fingerprint();
@@ -308,6 +314,14 @@ function ap_page_cache_prune(): void {
 }
 
 function ap_page_cache_finish(string $language, string $path, string $html, string $csp): void {
+    if (ap_update_probe() !== '') {
+        header('Content-Type: text/html; charset=utf-8');
+        header('Content-Security-Policy: ' . $csp);
+        header('Cache-Control: no-store');
+        header('X-AlternPress-Cache: BYPASS');
+        echo $html;
+        return;
+    }
     $request = $GLOBALS['AP_PAGE_CACHE_REQUEST'] ?? null;
     $representations = ['identity' => $html]; $status = 'BYPASS'; $lock = null;
     try {

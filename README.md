@@ -6,7 +6,8 @@
 
 **For those who have something to say.**
 
-A small, self-contained Markdown blog. One admin/editor. Italian and English.
+A small, self-contained Markdown blog. One admin/editor. Configurable languages
+(Italian and English by default). See [the short language guide](LANGUAGES.md).
 Your articles are ordinary files. Your photographs stay on your server.
 
 No database. No Composer. No npm. No CDN, remote fonts, analytics or third-party
@@ -22,11 +23,11 @@ this change does not revoke earlier grants. [Guida in italiano](README.it.md).
 ## What it does
 
 - Password-protected editor with one shared admin identity, no user roles.
-- Independent Italian/English translations and publication states.
+- Independent translations and publication states for configured languages.
 - Markdown toolbar, preview, title, summary, tags and cover photo.
 - Drafts remain inaccessible through public routes and archives.
 - Upload JPEG, PNG or WebP; validate, resize, re-encode and strip metadata.
-- Edit Home, Skills and About pages in both languages.
+- Edit Home, Skills and About pages in each configured language.
 - Prevent silent overwrites when two tabs edit the same article.
 - Keep previous saved file versions privately under `storage/history/`.
 - Run at the domain root or under a folder without editing source code.
@@ -89,7 +90,7 @@ these overrides, apply those limits in the host's PHP configuration instead.
 ## Site settings
 
 Open **Settings** in the admin to edit the site name, logo symbol, descriptions
-in both languages, default language, article count, public URL, search indexing,
+in configured languages, default language, article count, public URL, search indexing,
 footer texts, legal credits, contact email and custom CSS. Save once to apply all
 changes. A blank public URL preserves automatic domain/folder detection; an
 explicit URL, including any subfolder, changes canonical and alternate addresses
@@ -119,6 +120,7 @@ return [
     'description' => ['it' => 'Il mio blog.', 'en' => 'My blog.'],
     'email' => '',
     'legal' => '',
+    'languages' => ['it', 'en'],
     'default_language' => 'it',
     'origin' => '',
     'base_path' => null,
@@ -130,8 +132,9 @@ Keep `origin` empty and `base_path` null for automatic domain/folder detection.
 To enforce a canonical domain, set `origin` to the scheme and hostname only,
 without a trailing folder. If deploying behind a proxy, set `origin` explicitly
 and configure the web server's HTTPS indication; proxy headers are not blindly
-trusted. `languages` supports the IT/EN pair. `default_language` controls fallback
-for the visitor. Labels, SEO descriptions, email, legal text, navigation,
+trusted. `languages` is the single enabled-language list; add `de` or use one
+language as described in [LANGUAGES.md](LANGUAGES.md). `default_language` controls
+visitor fallback. Labels, SEO descriptions, email, legal text, navigation,
 timezone and photo limits are configurable.
 
 For a test installation set `search_indexing` to false; set it to true on the
@@ -144,10 +147,31 @@ Open **Articles → New article**. Choose a permanent slug, such as
 `2026-09-29-a-good-idea`. The date is separate: several articles can share a date.
 An existing date-only slug continues to work.
 
-Use the Italiano/English tabs. A translation can be empty until you need it.
+Use the configured language tabs. A translation can be empty until you need it.
 Each translation has its own Draft/Published setting. Saving a published
 translation updates it immediately; a future editorial date does not schedule
 publication. Switch it back to Draft to remove it from public view.
+
+To schedule a translation, select **Published** and set **Publish from** to an
+explicit instant, for example `2030-03-31T09:00:00+02:00` (Rome summer time) or
+`2030-03-31T07:00:00Z`. Leave it empty for immediate publication. The field is
+saved as `publish_at` in that translation's Markdown front matter. Seconds and
+an explicit UTC offset are required; the displayed site timezone is guidance,
+not an implicit conversion. This avoids ambiguity during daylight-saving changes.
+
+Before that instant the translation is private, including its public URL,
+article-local attachments, navigation, archives, tags, language alternates,
+sitemaps, llms.txt and JSON-LD/knowledge graph. At or after it, the next request
+can display it. Generated indexes and HTML/compressed caches revalidate at the
+boundary even without file edits. No database, cron, background worker or
+scheduled filesystem write is needed. The server clock must be correct.
+
+Draft always wins over the timestamp, even if the time is in the past. Invalid
+timestamps in hand-edited files fail private; the editor rejects them. Existing
+articles without `publish_at` keep their previous behavior, including future
+editorial dates. Use the authenticated editor's **Preview** for private work;
+there are no anonymous draft links. Shared uploads in `media/` remain public as
+described below. There is no public search or RSS/Atom feed in this release.
 
 Upload with **+ Photo**. Add an alternative text, then select a photo to insert
 it at the cursor. Use **Choose photo** for a cover. References such as
@@ -195,6 +219,47 @@ literal. See [inline code rules and limits](docs/markdown-inline-code.md).
 Existing ordinary triple-backtick blocks remain supported. Malformed legacy
 blocks that relied on a short, mixed or text-suffixed closer now stay code until
 a valid closer or EOF; adjust their delimiters if that was not intended.
+
+## Public cookies and language routing
+
+Public HTML and discovery routes do not create cookies or replacement browser
+storage. The language is explicit in `/it` and `/en` URLs; the root negotiates
+from `Accept-Language` or the configured default. It no longer remembers a
+language from a previous visit, and old `alternpress_lang` values never influence
+routing. Root redirects are non-cacheable and vary on `Accept-Language`.
+
+A returning visitor who still sends the legacy host-only `alternpress_lang`
+cookie receives **only a deletion header** (`Max-Age=0`, expiry in 1970) on the
+next public PHP request. It uses the original install path and current host,
+including subfolder installations. This is not a new persistent preference.
+Deletion responses are private/no-store, even on a cache HIT or 304, so a shared
+cache cannot retain and replay their visitor-specific header. After the browser
+removes it, subsequent public requests have no `Set-Cookie`.
+Apex and www have independent host-only cookies: each is cleaned on a visit to
+that host. Static assets served directly by Apache do not run this migration.
+
+The admin is separate: its authentication/CSRF session still requires a protected
+session cookie scoped to `/admin/` (with the install prefix), with HttpOnly,
+SameSite=Strict and Secure on HTTPS. This is **not** a zero-cookie claim for the
+entire installation. This change does not remove admin authentication, move
+tokens into URLs or add localStorage/sessionStorage or a banner.
+
+The owner may keep the necessary admin session while public browsing remains
+cookie-free. Existing server-side access/security logging is not removed by
+this change; the software still processes request information.
+
+### Optional site-specific privacy notice
+
+A published Markdown page at `content/{language}/privacy/index.md` enables a
+localised **Privacy and cookies** link in the public footer and the admin/login
+footer. Missing or draft files do not produce links, and draft content is not
+served directly. Notice addition/removal/state changes invalidate cached footer
+generations. The page uses the same safe Markdown renderer and creates no
+public cookies other than the legacy deletion header when applicable.
+
+No notice or business identity is installed by default for third-party sites.
+Site-specific policy drafts are not bundled. Supply reviewed facts for your own
+installation; the optional route is not a claim of legal compliance.
 
 ## Public page cache and compression
 
@@ -346,7 +411,7 @@ permissions. The complete CLI `backup` command remains available separately.
 
 **Settings → Check → Check site** checks folders/subfolders and effective PHP
 read, write and traversal permissions, local Markdown links, missing images and
-possibly unused photographs. Both languages, pages, covers, drafts, legacy post
+possibly unused photographs. Configured languages, pages, covers, drafts, legacy post
 images and CSS references are included. Findings show affected paths. This
 read-only operation does not change permissions or delete photos. A photograph
 may still be used elsewhere; review every candidate yourself. Incomplete scans
@@ -355,6 +420,9 @@ requests and URL fragments; use `./alt-cli links:check --external` when needed.
 
 `links:check` examines Markdown links, image references and covers, including
 drafts. It skips fragment checks, email/tel links and external URLs by default.
+Generated discovery resources (sitemaps, robots.txt, llms.txt and the knowledge
+graph) are checked as application routes, without requiring files on disk or
+network requests, including installations in a subdirectory.
 `--external` makes HTTP HEAD requests, checks redirects and blocks private network
 addresses. It currently resolves public IPv4 addresses. HTTP 403/405/429 and
 network errors mean **review**, not necessarily a dead link; only 404/410 are
@@ -407,6 +475,10 @@ private articles. The example content in the clean release is generic.
 
 ## Checks
 
+For reviewed code-only packages, automatic rollback and interruption recovery,
+see [the short update guide](UPDATE.md). The updater is opt-in, not an automatic
+installation or a promise of zero downtime.
+
 `php tests/run.php` runs focused Markdown and path regression checks.
 `php tests/markdown-inline.php` covers matching multi-backtick inline code,
 literal/XSS handling and large malformed inputs. See
@@ -416,7 +488,7 @@ Ordered lists preserve their first marker (up to nine digits, including zero);
 subsequent markers do not restart numbering. Longer markers retain the legacy
 default start of 1. This is not a general CommonMark list parser.
 The alpha was also exercised through HTTP for authentication, CSRF, private
-paths, draft visibility, bilingual publication, uploads, conflicts and relocation.
+paths, draft visibility, multilingual publication, uploads, conflicts and relocation.
 
 ## Security regression checks
 

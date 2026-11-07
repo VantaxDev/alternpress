@@ -8,7 +8,7 @@ require dirname(__DIR__) . '/lib/diagnostics.php';
 require __DIR__ . '/maintenance-actions.php';
 try { ap_session(); }
 catch (Throwable) { http_response_code(503); header('Content-Type: text/plain; charset=utf-8'); echo 'Sessione non disponibile. Riprova più tardi. / Session unavailable. Please try again later.'; exit; }
-$ui = in_array($_GET['ui'] ?? '', SUPPORTED_LANGUAGES, true) ? $_GET['ui'] : (in_array($_SESSION['ui'] ?? '', SUPPORTED_LANGUAGES, true) ? $_SESSION['ui'] : 'it');
+$ui = in_array($_GET['ui'] ?? '', SUPPORTED_LANGUAGES, true) ? $_GET['ui'] : (in_array($_SESSION['ui'] ?? '', SUPPORTED_LANGUAGES, true) ? $_SESSION['ui'] : DEFAULT_LANGUAGE);
 $_SESSION['ui'] = $ui;
 function t(string $it, string $en): string { global $ui; return $ui === 'it' ? $it : $en; }
 function admin_url(array $query = []): string { global $ui; return ap_url('/admin/') . '?' . http_build_query(array_merge(['ui' => $ui], $query)); }
@@ -38,7 +38,7 @@ try {
             ap_validate_document_input($_POST);
             $posted = true;
             $id = ap_save_document($_POST);
-            ap_flash_redirect(['page' => 'edit', 'id' => $id, 'kind' => ($_POST['kind'] ?? '') === 'page' ? 'page' : 'post'], t('Salvato. Le versioni pubblicate sono già online.', 'Saved. Published versions are now live.'));
+            ap_flash_redirect(['page' => 'edit', 'id' => $id, 'kind' => ($_POST['kind'] ?? '') === 'page' ? 'page' : 'post'], t('Salvato. Le bozze restano private; le versioni programmate saranno visibili dall’orario indicato.', 'Saved. Drafts stay private; scheduled versions become visible at their publication time.'));
         }
         if ($action === 'preview') {
             $body = ap_input_string($_POST, 'body');
@@ -86,7 +86,7 @@ $id = is_string($_GET['id'] ?? null) ? $_GET['id'] : '';
 $kind = ($_GET['kind'] ?? '') === 'page' ? 'page' : 'post';
 if ($posted) { $page = 'edit'; $id = (string) ($_POST['id'] ?? ''); $kind = ($_POST['kind'] ?? '') === 'page' ? 'page' : 'post'; }
 ?><!doctype html>
-<html lang="<?= h($ui) ?>">
+<html lang="<?= $ui === 'it' ? 'it' : 'en' ?>">
 <head>
 <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
 <meta name="robots" content="noindex,nofollow"><title>AlternPress · <?= h(ap_config('name')) ?></title>
@@ -97,8 +97,8 @@ if ($posted) { $page = 'edit'; $id = (string) ($_POST['id'] ?? ''); $kind = ($_P
 <body data-ui="<?= h($ui) ?>" data-endpoint="<?= h(admin_url()) ?>" data-csrf="<?= h(ap_csrf()) ?>">
 <header class="app-header"><div class="app-width topbar">
 <a class="brand" href="<?= h(admin_url()) ?>"><span class="brand-symbol">a.</span><span>alternpress<small><?= h(t('Solo per chi ha qualcosa da dire.', 'For those who have something to say.')) ?></small></span></a>
-<div class="header-tools"><a href="<?= h(admin_url(array_merge($_GET, ['ui' => $ui === 'it' ? 'en' : 'it']))) ?>" lang="<?= $ui === 'it' ? 'en' : 'it' ?>"><?= $ui === 'it' ? 'EN' : 'IT' ?></a>
-<a class="site-link" href="<?= h(language_url($ui)) ?>" target="_blank" rel="noopener"><?= h(t('Visita il sito', 'View site')) ?> ↗</a>
+<div class="header-tools"><?php if (count(SUPPORTED_LANGUAGES) > 1): foreach (SUPPORTED_LANGUAGES as $choice): ?><a href="<?= h(admin_url(array_merge($_GET, ['ui' => $choice]))) ?>"<?= $choice === $ui ? ' aria-current="page"' : '' ?>><?= h(strtoupper($choice)) ?></a><?php endforeach; endif; ?>
+<?php if (route_content_exists($CONTENT_ROOT, $ui, '/')): ?><a class="site-link" href="<?= h(language_url($ui)) ?>" target="_blank" rel="noopener"><?= h(t('Visita il sito', 'View site')) ?> ↗</a><?php endif; ?>
 <?php if ($authenticated): ?><form method="post"><?php csrf_field(); ?><input type="hidden" name="action" value="logout"><button class="quiet" type="submit"><?= h(t('Esci', 'Sign out')) ?></button></form><?php endif; ?></div>
 </div></header>
 <div class="app-width app-layout <?= $authenticated ? '' : 'login-layout' ?>">
@@ -121,7 +121,7 @@ if ($posted) { $page = 'edit'; $id = (string) ($_POST['id'] ?? ''); $kind = ($_P
 <div class="post-list">
 <?php foreach ($rows as $row): $translation = $row['translations'][$ui] ?? reset($row['translations']); ?>
 <article class="post-row" data-search-row><div><small class="subtle"><?= h($row['date']) ?></small><h2><a href="<?= h(admin_url(['page' => 'edit', 'id' => $row['id']])) ?>"><?= h($translation['meta']['title'] ?? $row['id']) ?></a></h2><small class="slug"><?= h($row['id']) ?></small></div><div class="translation-badges">
-<?php foreach (SUPPORTED_LANGUAGES as $lang): $d = $row['translations'][$lang] ?? null; ?><span class="badge <?= !$d ? 'missing' : (ap_published($d['meta']) ? 'published' : 'draft') ?>"><?= strtoupper($lang) ?> · <?= h(!$d ? t('assente', 'missing') : (ap_published($d['meta']) ? t('online', 'live') : t('bozza', 'draft'))) ?></span><?php endforeach; ?>
+<?php foreach (SUPPORTED_LANGUAGES as $lang): $d = $row['translations'][$lang] ?? null; $state = $d ? ap_publication_state($d['meta']) : 'missing'; $stateLabels = ['missing' => t('assente', 'missing'), 'draft' => t('bozza', 'draft'), 'scheduled' => t('programmato', 'scheduled'), 'invalid' => t('orario non valido — privato', 'invalid time — private'), 'published' => t('online', 'live')]; ?><span class="badge <?= !$d ? 'missing' : ($state === 'published' ? 'published' : 'draft') ?>"><?= strtoupper($lang) ?> · <?= h($stateLabels[$state]) ?></span><?php endforeach; ?>
 </div><a class="edit-link" href="<?= h(admin_url(['page' => 'edit', 'id' => $row['id']])) ?>"><?= h(t('Modifica', 'Edit')) ?> →</a></article>
 <?php endforeach; ?>
 <?php if (!$rows): ?><section class="empty-state"><h2><?= h(t('La prima parola è tua.', 'The first word is yours.')) ?></h2><p><?= h(t('Crea il tuo primo articolo e pubblicalo quando è pronto.', 'Create your first article and publish when you are ready.')) ?></p></section><?php endif; ?>
@@ -143,11 +143,12 @@ if ($posted) $date = (string) ($_POST['date'] ?? $date);
 <?php csrf_field(); ?><input type="hidden" name="action" value="save"><input type="hidden" name="kind" value="<?= h($kind) ?>">
 <div class="page-heading"><div><p class="eyebrow"><?= h($kind === 'page' ? t('PAGINA', 'PAGE') : t('ARTICOLO', 'ARTICLE')) ?></p><h1><?= h($exists ? t('Dai forma alle parole.', 'Shape your words.') : t('Comincia da un’idea.', 'Start with an idea.')) ?></h1></div><button type="submit" data-save><?= h(t('Salva modifiche', 'Save changes')) ?></button></div>
 <div class="editor-meta"><div><label for="slug"><?= h(t('Identificativo / indirizzo', 'Slug / address')) ?></label><input id="slug" name="id" value="<?= h($id) ?>" pattern="[a-z0-9]+(-[a-z0-9]+)*" maxlength="100" placeholder="<?= date('Y-m-d') ?>-una-buona-idea" required <?= $exists || $kind === 'page' ? 'readonly' : '' ?>><small class="subtle"><?= h(t('Condiviso tra IT e EN. Non cambia dopo il primo salvataggio.', 'Shared by IT and EN. Fixed after the first save.')) ?></small></div><div><label for="date"><?= h(t('Data', 'Date')) ?></label><input id="date" type="date" name="date" value="<?= h($date) ?>" required><small class="subtle"><?= h(t('Data editoriale, senza programmazione.', 'Editorial date, without scheduling.')) ?></small></div></div>
-<div class="tabs" role="tablist" aria-label="<?= h(t('Lingua del contenuto', 'Content language')) ?>"><?php foreach (SUPPORTED_LANGUAGES as $i => $lang): ?><button type="button" role="tab" id="tab-<?= h($lang) ?>" aria-controls="panel-<?= h($lang) ?>" aria-selected="<?= $i === 0 ? 'true' : 'false' ?>" data-tab="<?= h($lang) ?>"><?= $lang === 'it' ? 'Italiano' : 'English' ?></button><?php endforeach; ?></div>
+<div class="tabs" role="tablist" aria-label="<?= h(t('Lingua del contenuto', 'Content language')) ?>"><?php foreach (SUPPORTED_LANGUAGES as $i => $lang): ?><button type="button" role="tab" id="tab-<?= h($lang) ?>" aria-controls="panel-<?= h($lang) ?>" aria-selected="<?= $i === 0 ? 'true' : 'false' ?>" data-tab="<?= h($lang) ?>"><?= h(ap_language_name($lang)) ?></button><?php endforeach; ?></div>
 <?php foreach ($documents as $lang => $doc): $meta = $doc['meta']; ?>
-<section id="panel-<?= h($lang) ?>" class="language-panel" role="tabpanel" aria-labelledby="tab-<?= h($lang) ?>" data-panel="<?= h($lang) ?>">
+<section id="panel-<?= h($lang) ?>" class="language-panel" role="tabpanel" aria-labelledby="tab-<?= h($lang) ?>" data-panel="<?= h($lang) ?>" lang="<?= h($lang) ?>">
 <input type="hidden" name="translation[<?= h($lang) ?>][revision]" value="<?= h($doc['revision']) ?>">
 <div class="title-status"><div><label for="title-<?= h($lang) ?>"><?= h(t('Titolo', 'Title')) ?> · <?= strtoupper($lang) ?></label><input class="title-input" id="title-<?= h($lang) ?>" name="translation[<?= h($lang) ?>][title]" value="<?= h($meta['title'] ?? '') ?>" maxlength="250" placeholder="<?= h(t('Un titolo che merita di essere letto', 'A title worth reading')) ?>"></div><div><label for="status-<?= h($lang) ?>"><?= h(t('Visibilità', 'Visibility')) ?></label><select id="status-<?= h($lang) ?>" name="translation[<?= h($lang) ?>][status]" <?= $kind === 'page' ? 'disabled' : '' ?>><?php foreach (['draft' => t('Bozza privata', 'Private draft'), 'published' => t('Pubblicato', 'Published')] as $status => $label): ?><option value="<?= $status ?>"<?= (($meta['status'] ?? ($doc['exists'] ? 'published' : 'draft')) === $status) ? ' selected' : '' ?>><?= h($label) ?></option><?php endforeach; ?></select></div></div>
+<div><label for="publish-at-<?= h($lang) ?>"><?= h(t('Pubblica dal (facoltativo)', 'Publish from (optional)')) ?></label><input id="publish-at-<?= h($lang) ?>" name="translation[<?= h($lang) ?>][publish_at]" value="<?= h($meta['publish_at'] ?? '') ?>" placeholder="2026-12-01T09:00:00+01:00" maxlength="25" aria-describedby="publish-help-<?= h($lang) ?>"><small class="subtle" id="publish-help-<?= h($lang) ?>"><?= h(t('Con Pubblicato, resta privato fino a questo istante. Lascia vuoto per pubblicare subito. Usa data, ora e fuso esplicito (Z o ±HH:MM). La bozza resta sempre privata. Fuso del sito: ', 'With Published, stays private until this instant. Leave empty to publish immediately. Use date, time and an explicit offset (Z or ±HH:MM). A draft always stays private. Site timezone: ')) ?><?= h((string) ap_config('timezone')) ?>.</small></div>
 <div class="writing-toolbar"><div><button type="button" class="tool" data-format="bold" data-language="<?= h($lang) ?>" aria-label="<?= h(t('Grassetto', 'Bold')) ?>"><strong>B</strong></button><button type="button" class="tool" data-format="italic" data-language="<?= h($lang) ?>" aria-label="<?= h(t('Corsivo', 'Italic')) ?>"><em>I</em></button><button type="button" class="tool" data-format="heading" data-language="<?= h($lang) ?>">H2</button><button type="button" class="tool" data-format="link" data-language="<?= h($lang) ?>"><?= h(t('Link', 'Link')) ?></button><button type="button" class="tool" data-open-media="<?= h($lang) ?>">+ <?= h(t('Foto', 'Photo')) ?></button></div><button type="button" class="tool" data-preview="<?= h($lang) ?>"><?= h(t('Anteprima', 'Preview')) ?> ↗</button></div>
 <label class="sr-only" for="body-<?= h($lang) ?>"><?= h(t('Testo Markdown', 'Markdown text')) ?></label><textarea class="markdown-editor" id="body-<?= h($lang) ?>" name="translation[<?= h($lang) ?>][body]" rows="18" maxlength="500000" placeholder="<?= h(t('Scrivi qui. Basta un po’ di Markdown.', 'Write here. A little Markdown is all you need.')) ?>"><?= h($doc['body']) ?></textarea>
 <div class="preview prose" data-preview-panel="<?= h($lang) ?>" hidden></div>
@@ -178,5 +179,5 @@ if ($posted) $date = (string) ($_POST['date'] ?? $date);
 <dialog id="media-dialog"><div class="dialog-top"><h2><?= h(t('Una foto, una storia.', 'A photo, a story.')) ?></h2><button type="button" class="quiet" data-close-dialog aria-label="<?= h(t('Chiudi', 'Close')) ?>">×</button></div><p class="subtle"><?= h(t('JPG, PNG o WebP · massimo ', 'JPG, PNG or WebP · up to ')) ?><?= (int) ap_config('upload_max_mb') ?> MB · 24 MP</p><form data-upload><label for="photo"><?= h(t('Carica dal dispositivo', 'Upload from your device')) ?></label><input id="photo" name="photo" type="file" accept="image/jpeg,image/png,image/webp" required><button type="submit"><?= h(t('Carica foto', 'Upload photo')) ?></button></form><label for="photo-alt"><?= h(t('Descrivi la foto (testo alternativo)', 'Describe the photo (alternative text)')) ?></label><input id="photo-alt" placeholder="<?= h(t('Cosa si vede nella fotografia?', 'What is in the photograph?')) ?>"><p role="status" data-upload-status></p><div class="media-grid" data-picker>
 <?php foreach (ap_media_files() as $file): ?><button type="button" class="photo-choice" data-photo="@media/<?= h(basename($file)) ?>" aria-label="<?= h(t('Usa questa foto', 'Use this photo')) ?>"><img loading="lazy" src="<?= h(ap_url('/media/' . basename($file))) ?>" alt=""></button><?php endforeach; ?></div></dialog>
 <?php endif; ?>
-<footer class="app-width app-footer">AlternPress 0.5.0-alpha · <?= h(t('Semplice. Autosufficiente. Tuo.', 'Simple. Self-contained. Yours.')) ?></footer>
+<footer class="app-width app-footer">AlternPress 0.5.0-alpha · <?= h(t('Semplice. Autosufficiente. Tuo.', 'Simple. Self-contained. Yours.')) ?><?php if (route_content_exists($CONTENT_ROOT, $ui, '/privacy')): ?> · <a href="<?= h(language_url($ui, '/privacy')) ?>"><?= h(t('Privacy e cookie', 'Privacy and cookies')) ?></a><?php endif; ?></footer>
 </body></html>

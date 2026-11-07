@@ -2,12 +2,16 @@
 
 [Theme, favicon, cache & compression — quick guide / Guida rapida](QUICKSTART.md)
 
+[Update del solo codice, rollback automatico e recupero dopo interruzioni](UPDATE.md)
+
+[Lingue configurabili: en, it, de o una sola lingua](LANGUAGES.md)
+
 [Sito del progetto](https://alternpress.com/it/) · [English](README.md) · [Codice e release](https://github.com/VantaxDev/alternpress) · [Sicurezza](SECURITY.md)
 
 **Solo per chi ha qualcosa da dire.**
 
 Un blog Markdown piccolo e autosufficiente. Un unico accesso admin/editor,
-italiano e inglese, articoli e foto sul tuo server. Nessun database, Composer,
+lingue configurabili (italiano e inglese di default), articoli e foto sul tuo server. Nessun database, Composer,
 npm, CDN, font remoto, analytics o servizio esterno.
 
 Sorgente attuale: **GNU GPL versione 3 soltanto (`GPL-3.0-only`)**. Vedi
@@ -37,6 +41,33 @@ lunghezza, anche multiple; quelle senza chiusura restano letterali.
 [Regole e limiti inline](docs/markdown-inline-code.md). Gli esempi tripli validi restano
 compatibili; chiusure più corte, miste o con testo finale non chiudono più il
 blocco. [Regole, esempio e limiti dettagliati](README.md#fenced-code-examples).
+
+## Cookie pubblici e lingua
+
+Le pagine pubbliche e gli indici non creano cookie né storage alternativi.
+La lingua resta negli URL `/it` e `/en`; la root usa `Accept-Language` o la lingua
+predefinita, senza ricordare quella di visite precedenti. Il vecchio cookie
+`alternpress_lang` non viene usato per scegliere la lingua.
+
+Se il browser invia ancora quel cookie, la successiva richiesta PHP pubblica
+riceve soltanto un header di eliminazione (`Max-Age=0`, scadenza nel 1970), sullo
+stesso host e percorso dell’installazione. Non è un nuovo cookie persistente.
+Dopo la rimozione, le richieste pubbliche non inviano `Set-Cookie`. Apex e www
+richiedono ciascuno una visita per eliminare i rispettivi cookie host-only.
+
+L’admin conserva la sessione necessaria per autenticazione e CSRF, limitata a
+`/admin/`, HttpOnly, SameSite=Strict e Secure su HTTPS. Non si dichiara quindi
+“zero cookie sull’intero sito”. Nessun banner o sostituto in localStorage viene aggiunto; la sicurezza admin e i
+log del server restano invariati.
+Il titolare può mantenere questa sessione tecnica. Non si afferma che il software
+non legga dati: elabora comunque le richieste e i sistemi di sicurezza server-side.
+
+Un file Markdown pubblicato in `content/{lingua}/privacy/index.md` abilita il link
+**Privacy e cookie** nel footer pubblico e nel login/admin. Se manca o è in bozza,
+il link non compare e il contenuto privato non viene servito. Nessuna identità o
+informativa viene imposta alle installazioni di terzi. Le bozze specifiche dei
+siti non sono incluse: fornisci soltanto fatti verificati per la tua installazione.
+La route facoltativa non costituisce una certificazione di conformità legale.
 
 ## Installazione
 
@@ -86,6 +117,25 @@ Le schede Italiano/English hanno ciascuna titolo, testo, descrizione, tag,
 copertina e stato bozza/pubblicato. Puoi compilare una lingua sola e tradurre
 in seguito. Non c’è traduzione automatica. La data non programma l’uscita:
 salvare una versione pubblicata la rende immediatamente visibile.
+
+Per programmare una traduzione, seleziona **Pubblicato** e imposta **Pubblica dal**,
+ad esempio `2030-03-31T09:00:00+02:00` (ora estiva di Roma), equivalente a
+`2030-03-31T07:00:00Z`. Campo vuoto significa pubblicazione immediata. Servono i
+secondi e il fuso esplicito: il fuso del sito mostrato è un riferimento, non una
+conversione automatica. Il valore viene salvato come `publish_at` nel front matter
+Markdown della singola traduzione.
+
+Prima dell’istante indicato non sono pubblici testo, metadati, URL, allegati nella
+cartella dell’articolo, archivi, tag, traduzioni, sitemap e discovery. Dall’istante
+indicato diventano visibili alla richiesta successiva; indici e cache HTML e
+compresse si rivalidano anche senza modificare file. Non servono database, cron
+o processi in background. Serve un orologio corretto sul server.
+
+La bozza resta sempre privata, anche con un orario passato. Un orario non valido
+in un file modificato a mano mantiene il contenuto privato; l’editor lo rifiuta.
+Gli articoli senza `publish_at` mantengono il comportamento precedente. L’anteprima
+richiede accesso al pannello: non ci sono link pubblici alle bozze. I media condivisi
+restano pubblici come indicato sotto. Non sono presenti ricerca pubblica o feed RSS/Atom.
 
 **+ Foto** carica una fotografia e la inserisce nel testo. Scrivi una descrizione
 alternativa e seleziona la foto. **Scegli foto** imposta la copertina. JPG, PNG e
@@ -194,8 +244,8 @@ nei log del comando. Il recupero via email non è implementato.
 ## Configurazione e trasferimento
 
 Dal pannello **Impostazioni** puoi modificare nome, simbolo del logo, descrizioni
-IT/EN, lingua predefinita, numero di articoli in home, URL pubblico,
-indicizzazione, footer nelle due lingue, dati legali, email e CSS personalizzato.
+nelle lingue configurate, lingua predefinita, numero di articoli in home, URL pubblico,
+indicizzazione, footer localizzati, dati legali, email e CSS personalizzato.
 **Salva impostazioni** applica tutte le modifiche insieme.
 
 Lascia vuoto l’URL pubblico per riconoscere automaticamente dominio e cartella.
@@ -213,7 +263,7 @@ Le versioni precedenti restano in `storage/history/`. Per tornare a tutte le
 impostazioni dei file, fai una copia di `storage/settings.php` e rimuovilo via SSH.
 
 `config.php` contiene i valori di base; **`config.local.php`** contiene i tuoi:
-nome, descrizioni IT/EN, contatti, testo legale, lingua iniziale, navigazione,
+nome, descrizioni localizzate, contatti, testo legale, lingua iniziale, navigazione,
 fuso orario, limiti delle foto. Le lingue supportate sono italiano e inglese.
 
 Lascia `origin` vuoto e `base_path` a `null`: dominio e sottocartella si adattano
@@ -235,7 +285,7 @@ presenti soltanto nella destinazione.
 ## Backup, ripristino e Check dal pannello
 
 In **Impostazioni → Backup / restore**, premi **Crea backup** e poi **Scarica**.
-Il backup dati contiene tutti i Markdown IT/EN, le immagini JPG/JPEG/PNG/WebP/GIF
+Il backup dati contiene tutti i Markdown anche delle lingue disabilitate, le immagini JPG/JPEG/PNG/WebP/GIF
 nelle cartelle dei contenuti e dei media, e le impostazioni del sito (CSS e footer
 compresi). Eventuali file di altri formati sono elencati come esclusi. Conserva
 una copia anche fuori dal server: l’archivio può contenere bozze e dati personali.
@@ -260,11 +310,15 @@ per il recupero manuale. I backup salvati non vengono eliminati automaticamente.
 **Check → Controlla il sito** verifica lettura, scrittura e accesso a cartelle e
 sottocartelle con l’utente PHP effettivo. Controlla i collegamenti locali nei
 Markdown, le copertine, le immagini e le possibili foto orfane, includendo bozze,
-pagine, entrambe le lingue e riferimenti nei CSS. Mostra i percorsi da esaminare;
+pagine, lingue configurate e riferimenti nei CSS. Mostra i percorsi da esaminare;
 non corregge permessi e non elimina foto. Una foto senza riferimenti rilevati
 può comunque essere usata altrove. Le scansioni incomplete sono indicate e non
 producono un elenco di orfani. I link esterni non vengono interrogati dal
 pannello; usa `./alt-cli links:check --external` per il controllo HTTP.
+
+`links:check` riconosce sitemap, robots.txt, llms.txt e grafo della conoscenza
+come risorse generate dall'applicazione, anche nelle installazioni in
+sottocartelle: non richiede file su disco né richieste di rete per verificarle.
 
 ## alt-cli
 

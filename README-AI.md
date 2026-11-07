@@ -14,8 +14,8 @@ These addresses are relative to the installation directory. An installation at
 | --- | --- |
 | Article HTML | Embedded Schema.org JSON-LD describing the article and its relationships. |
 | `/knowledge-graph.jsonld` | JSON-LD graph connecting the site, its published articles and their topics. |
-| `/sitemap.xml` | Sitemap index linking the Italian and English sitemaps. |
-| `/sitemap-it.xml`, `/sitemap-en.xml` | Canonical public pages and articles, including links to published translations. |
+| `/sitemap.xml` | Sitemap index linking the configured language sitemaps. |
+| `/sitemap-<language>.xml` | Canonical public pages and articles, including links to published translations (`it`/`en` by default). |
 | `/llms.txt` | Markdown directory of public content for tools that support this convention. |
 | `/robots.txt` | Crawler instructions and the sitemap address. |
 
@@ -27,6 +27,7 @@ the graph or created a public knowledge panel.
 ## Publishing workflow
 
 Write a title, summary and relevant tags, then publish the article in the editor.
+Languages come from the single configured list; see [LANGUAGES.md](LANGUAGES.md).
 Each translation has its own publication state. Publishing, editing, deleting or
 returning a translation to Draft is reflected when the discovery resources are
 next requested. Translations are linked only when the corresponding public
@@ -38,6 +39,15 @@ the article has no explicit date. Set the editorial date accurately; a future
 date does not schedule publication. File modification timestamps are used for
 content modification dates, so preserve them when copying unchanged content
 between servers.
+
+An explicit `publish_at` RFC3339 timestamp (for example
+`2030-03-31T09:00:00+02:00`) schedules a Published translation independently of its
+editorial date. Before that instant it is absent from all discovery resources,
+including translation links; invalid timestamps fail private. Draft translations
+remain private regardless of time. Visibility is evaluated on requests, and
+source/cache fingerprints include the current eligibility state so the boundary
+does not require cron, a database, or a file change. When present and valid,
+`publish_at` supplies the structured `datePublished` instead of the editorial date.
 
 Drafts, private storage, configuration and revision history are excluded from
 the discovery resources. `robots.txt` and the search-indexing setting are crawler

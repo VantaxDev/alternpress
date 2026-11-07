@@ -41,6 +41,22 @@ These are scoped rules from the
 [CommonMark fenced-code definition](https://spec.commonmark.org/0.31.2/#fenced-code-blocks),
 not support for general nested containers or syntax highlighting.
 
+## Tables and following blocks
+
+A supported heading, list item or quote can start immediately after a table,
+even if its text contains `|`. It ends the table before ordinary block parsing;
+the entire block text is retained, rather than truncated to the table's columns.
+For example, `# Title | detail`, `- Item | detail`, `3. Item | detail` and
+`> Quote | detail` each start their normal block after the table header or body.
+
+These boundaries use the existing standalone grammar: headings require one to
+six `#` at column zero and whitespace; lists accept `-`, `*`, `+` or digits plus
+`.` followed by whitespace; quotes accept `>` with optional following space.
+The existing list/quote indentation support is unchanged. To put block-looking
+text in a cell instead, start the row with `|`, such as `| # Title | detail |`.
+Invalid block markers and ordinary pipe-bearing lines remain table rows.
+Nested containers, new heading forms and general table escaping are not added.
+
 ## Images and linked images
 
 Matched code spans in image descriptions contribute plain text to the escaped
@@ -77,7 +93,8 @@ It checks both actual targets of linked images, without fetching remote URLs.
 
 The standard PHP test loop includes `markdown-inline.php`, `markdown-fences.php`,
 `markdown-images.php`, `markdown-linked-images.php`, `markdown-lists.php`,
-`markdown-thematic-breaks.php` and `diagnostics-markdown.php`.
+`markdown-thematic-breaks.php`, `markdown-table-fences.php`,
+`markdown-table-blocks.php` and `diagnostics-markdown.php`.
 They cover escaping, malformed input, token boundaries and bounded large inputs.
 Timing is informational, not a wall-clock assertion.
 
