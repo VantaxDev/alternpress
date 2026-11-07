@@ -220,6 +220,47 @@ Existing ordinary triple-backtick blocks remain supported. Malformed legacy
 blocks that relied on a short, mixed or text-suffixed closer now stay code until
 a valid closer or EOF; adjust their delimiters if that was not intended.
 
+## Public cookies and language routing
+
+Public HTML and discovery routes do not create cookies or replacement browser
+storage. The language is explicit in `/it` and `/en` URLs; the root negotiates
+from `Accept-Language` or the configured default. It no longer remembers a
+language from a previous visit, and old `alternpress_lang` values never influence
+routing. Root redirects are non-cacheable and vary on `Accept-Language`.
+
+A returning visitor who still sends the legacy host-only `alternpress_lang`
+cookie receives **only a deletion header** (`Max-Age=0`, expiry in 1970) on the
+next public PHP request. It uses the original install path and current host,
+including subfolder installations. This is not a new persistent preference.
+Deletion responses are private/no-store, even on a cache HIT or 304, so a shared
+cache cannot retain and replay their visitor-specific header. After the browser
+removes it, subsequent public requests have no `Set-Cookie`.
+Apex and www have independent host-only cookies: each is cleaned on a visit to
+that host. Static assets served directly by Apache do not run this migration.
+
+The admin is separate: its authentication/CSRF session still requires a protected
+session cookie scoped to `/admin/` (with the install prefix), with HttpOnly,
+SameSite=Strict and Secure on HTTPS. This is **not** a zero-cookie claim for the
+entire installation. This change does not remove admin authentication, move
+tokens into URLs or add localStorage/sessionStorage or a banner.
+
+The owner may keep the necessary admin session while public browsing remains
+cookie-free. Existing server-side access/security logging is not removed by
+this change; the software still processes request information.
+
+### Optional site-specific privacy notice
+
+A published Markdown page at `content/{language}/privacy/index.md` enables a
+localised **Privacy and cookies** link in the public footer and the admin/login
+footer. Missing or draft files do not produce links, and draft content is not
+served directly. Notice addition/removal/state changes invalidate cached footer
+generations. The page uses the same safe Markdown renderer and creates no
+public cookies other than the legacy deletion header when applicable.
+
+No notice or business identity is installed by default for third-party sites.
+Site-specific policy drafts are not bundled. Supply reviewed facts for your own
+installation; the optional route is not a claim of legal compliance.
+
 ## Public page cache and compression
 
 AlternPress keeps prepared public HTML pages in its private `cache/` directory.

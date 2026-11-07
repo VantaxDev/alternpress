@@ -22,7 +22,7 @@ entry to make the dashboard default-language selector editable again.
 - Missing/draft pages and disabled language routes return **404**. Menus,
   language switches and hreflang link only actual published destinations.
   Root negotiation uses enabled languages with a published Home, honoring
-  cookie, Accept-Language quality and then default/first available Home.
+  Accept-Language quality and then default/first available Home.
 - Add optional `description['de']` and `tagline['de']` text in the dashboard
   or existing config arrays. Missing localized site text is blank, not translated.
   UI strings ship in Italian/English; other languages use **English UI** and

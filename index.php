@@ -244,11 +244,6 @@ function preferred_language(): string
         foreach ($available as $language) if (strcasecmp($primary, $language) === 0) return $language;
         return null;
     };
-    $cookieLanguage = is_string($_COOKIE['alternpress_lang'] ?? null) ? $_COOKIE['alternpress_lang'] : '';
-    if (($selected = $match($cookieLanguage)) !== null) {
-        return $selected;
-    }
-
     $header = substr((string) ($_SERVER['HTTP_ACCEPT_LANGUAGE'] ?? ''), 0, 4096);
     $preferences = [];
     foreach (array_slice(explode(',', $header), 0, 32) as $order => $candidate) {
@@ -305,7 +300,7 @@ function route_content_exists(string $contentRoot, string $language, string $rel
         return public_document_published($contentDir . '/home/index.md');
     }
 
-    if ($relativePath === '/skills' || $relativePath === '/about') {
+    if (in_array($relativePath, ['/skills', '/about', '/privacy'], true)) {
         return public_document_published($contentDir . $relativePath . '/index.md');
     }
 
@@ -499,18 +494,22 @@ function nav_active(string $relativePath, string $target): string
     return '';
 }
 
-function ap_public_language_cookie(string $language): void
+/** Remove only an existing legacy preference; never create public storage. */
+function ap_expire_legacy_language_cookie(): void
 {
-    if (PHP_SAPI === 'cli' || !in_array($language, SUPPORTED_LANGUAGES, true)) return;
-    if (($_COOKIE['alternpress_lang'] ?? '') !== $language) {
-        setcookie('alternpress_lang', $language, [
-            'expires' => time() + 31536000,
-            'path' => ap_url('/'),
-            'secure' => ap_https(),
-            'httponly' => false,
-            'samesite' => 'Lax',
-        ]);
-    }
+    if (PHP_SAPI === 'cli' || !array_key_exists('alternpress_lang', $_COOKIE)) return;
+    setcookie('alternpress_lang', '', [
+        'expires' => 1,
+        'path' => ap_url('/'),
+        'secure' => ap_https(),
+        'httponly' => false,
+        'samesite' => 'Lax',
+    ]);
+    // Cache/discovery emit their own headers later. Never let a shared cache
+    // retain this visitor-specific deletion response and replay Set-Cookie.
+    header_register_callback(static function(): void {
+        header('Cache-Control: private, no-store');
+    });
 }
 
 /** Owner-supplied assets stay local; content hashes refresh browser caches. */
@@ -547,7 +546,6 @@ function render_layout(string $language, string $relativePath, string $title, st
     $themeCss = public_path_ok(__DIR__ . '/assets/theme.css');
     $favicon = public_path_ok(__DIR__ . '/assets/favicon.local.svg')
         ? '/assets/favicon.local.svg' : '/assets/favicon.svg';
-    ap_public_language_cookie($language);
     ap_update_probe_headers();
     ob_start();
 ?><!doctype html>
@@ -613,7 +611,7 @@ function render_layout(string $language, string $relativePath, string $title, st
 </main>
 
 <footer class="container footer">
-  <small>© <?= date('Y') ?> <span id="legal-info" class="footer-credits"><?= h(ap_config('legal')) ?></span> <?= h($text['footer']) ?><?php if (ap_config('email') !== ''): ?> · <?= protected_email_link(ap_config('email'), 'Email') ?><?php endif; ?></small>
+  <small>© <?= date('Y') ?> <span id="legal-info" class="footer-credits"><?= h(ap_config('legal')) ?></span> <?= h($text['footer']) ?><?php if (ap_config('email') !== ''): ?> · <?= protected_email_link(ap_config('email'), 'Email') ?><?php endif; ?><?php if (route_content_exists($CONTENT_ROOT, $language, '/privacy')): ?> · <a href="<?= h(language_url($language, '/privacy')) ?>"><?= h($language === 'it' ? 'Privacy e cookie' : 'Privacy and cookies') ?></a><?php endif; ?></small>
 </footer>
 <script>
 (() => {
@@ -666,10 +664,13 @@ if (($_GET['ap-css'] ?? null) === 'custom') {
 }
 
 
+ap_expire_legacy_language_cookie();
 $path = route_path();
 ap_discovery_dispatch($path);
 
 if ($path === '/') {
+    header('Vary: Accept-Language', false);
+    header('Cache-Control: private, no-store');
     redirect_to(language_url(preferred_language()));
 }
 
@@ -700,7 +701,6 @@ if (preg_match('#^/post/([a-z0-9]+(?:-[a-z0-9]+)*)/([^/]+\.(?:jpg|jpeg|png|webp|
     http_response_code(404); exit;
 }
 
-ap_public_language_cookie($language);
 ap_page_cache_try_serve($language, $relativePath);
 $posts = load_posts($contentDir, $CACHE_DIR, $language);
 $text = labels($language);
@@ -709,6 +709,7 @@ $special = [
     '/home' => $contentDir . '/home/index.md',
     '/about' => $contentDir . '/about/index.md',
     '/skills' => $contentDir . '/skills/index.md',
+    '/privacy' => $contentDir . '/privacy/index.md',
 ];
 
 if ($relativePath === '/') {
@@ -752,6 +753,7 @@ if ($relativePath === '/') {
 if (isset($special[$relativePath])) {
     $raw = read_file_or_404($special[$relativePath]);
     [$meta, $body] = parse_front_matter($raw);
+    if ($relativePath === '/privacy' && !ap_published($meta)) { http_response_code(404); render_layout($language, $relativePath, '404', '<h1>404</h1>'); exit; }
     render_layout(
         $language,
         $relativePath,

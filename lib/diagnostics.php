@@ -238,7 +238,7 @@ final class AP_Diagnostics
         $language = in_array($segments[0], $this->languages, true) ? array_shift($segments) : $this->defaultLanguage;
         $route = '/' . implode('/', $segments);
         if ($route === '/' || $route === '/home') return $this->published('content/' . $language . '/home/index.md');
-        if (in_array($route, ['/about', '/skills'], true)) return $this->published('content/' . $language . $route . '/index.md');
+        if (in_array($route, ['/about', '/skills', '/privacy'], true)) return $this->published('content/' . $language . $route . '/index.md');
         if (in_array($route, ['/archive', '/tags'], true) || preg_match('~^/tag/[^/]+$~u', $route)) return isset($this->directories['content/' . $language]);
         if (preg_match('~^/post/([a-z0-9]+(?:-[a-z0-9]+)*)(?:/([^/]+\.(?:jpg|jpeg|png|webp|gif)))?$~i', $route, $match)) {
             $prefix = 'content/' . $language . '/post/' . $match[1];

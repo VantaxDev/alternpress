@@ -42,6 +42,33 @@ lunghezza, anche multiple; quelle senza chiusura restano letterali.
 compatibili; chiusure più corte, miste o con testo finale non chiudono più il
 blocco. [Regole, esempio e limiti dettagliati](README.md#fenced-code-examples).
 
+## Cookie pubblici e lingua
+
+Le pagine pubbliche e gli indici non creano cookie né storage alternativi.
+La lingua resta negli URL `/it` e `/en`; la root usa `Accept-Language` o la lingua
+predefinita, senza ricordare quella di visite precedenti. Il vecchio cookie
+`alternpress_lang` non viene usato per scegliere la lingua.
+
+Se il browser invia ancora quel cookie, la successiva richiesta PHP pubblica
+riceve soltanto un header di eliminazione (`Max-Age=0`, scadenza nel 1970), sullo
+stesso host e percorso dell’installazione. Non è un nuovo cookie persistente.
+Dopo la rimozione, le richieste pubbliche non inviano `Set-Cookie`. Apex e www
+richiedono ciascuno una visita per eliminare i rispettivi cookie host-only.
+
+L’admin conserva la sessione necessaria per autenticazione e CSRF, limitata a
+`/admin/`, HttpOnly, SameSite=Strict e Secure su HTTPS. Non si dichiara quindi
+“zero cookie sull’intero sito”. Nessun banner o sostituto in localStorage viene aggiunto; la sicurezza admin e i
+log del server restano invariati.
+Il titolare può mantenere questa sessione tecnica. Non si afferma che il software
+non legga dati: elabora comunque le richieste e i sistemi di sicurezza server-side.
+
+Un file Markdown pubblicato in `content/{lingua}/privacy/index.md` abilita il link
+**Privacy e cookie** nel footer pubblico e nel login/admin. Se manca o è in bozza,
+il link non compare e il contenuto privato non viene servito. Nessuna identità o
+informativa viene imposta alle installazioni di terzi. Le bozze specifiche dei
+siti non sono incluse: fornisci soltanto fatti verificati per la tua installazione.
+La route facoltativa non costituisce una certificazione di conformità legale.
+
 ## Installazione
 
 Servono PHP 8.2+ con le estensioni mbstring, fileinfo, GD, sessioni e JSON,
