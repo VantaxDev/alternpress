@@ -10,7 +10,10 @@ Un blog Markdown piccolo e autosufficiente. Un unico accesso admin/editor,
 italiano e inglese, articoli e foto sul tuo server. Nessun database, Composer,
 npm, CDN, font remoto, analytics o servizio esterno.
 
-Versione **0.5.0-alpha**, licenza MIT. La [guida completa in inglese](README.md)
+Sorgente attuale: **GNU GPL versione 3 soltanto (`GPL-3.0-only`)**. Vedi
+[LICENSE](LICENSE) e [autori e avvisi preesistenti](NOTICE).
+Gli archivi della release **0.5.0-alpha** conservano la licenza MIT originaria:
+questa modifica non revoca i diritti già concessi. La [guida completa in inglese](README.md)
 descrive anche struttura, permessi, ripristino e limiti del formato Markdown.
 
 JSON-LD, knowledge graph, sitemap multilingua e `llms.txt` vengono generati

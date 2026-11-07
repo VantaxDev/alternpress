@@ -14,7 +14,10 @@ services. PHP, CSS and JavaScript are included. The Markdown renderer belongs to
 the project; its historical `Parsedown` class name is a compatibility name, not
 an external package.
 
-Version **0.5.0-alpha**. MIT license. [Guida in italiano](README.it.md).
+Current source: **GNU GPL version 3 only (`GPL-3.0-only`)**. See [LICENSE](LICENSE)
+and [author and prior-license notices](NOTICE).
+The **0.5.0-alpha** release archives remain under their original MIT license;
+this change does not revoke earlier grants. [Guida in italiano](README.it.md).
 
 ## What it does
 

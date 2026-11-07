@@ -1,0 +1,22 @@
+AlternPress
+Copyright (c) 2026 AlternPress contributors
+Original project author: VantaxDev
+
+SPDX-License-Identifier: GPL-3.0-only
+
+This revision of AlternPress is free software: you can redistribute it and/or
+modify it under the terms of the GNU General Public License, version 3 only,
+as published by the Free Software Foundation. The full license is in LICENSE.
+
+AlternPress is distributed in the hope that it will be useful, but WITHOUT
+ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
+FOR A PARTICULAR PURPOSE. See the GNU General Public License for more details.
+
+Earlier revisions, including v0.5.0-alpha, were distributed under the MIT
+license. Those grants are not revoked by this change. The original copyright
+and permission notice is preserved verbatim in LICENSES/MIT.txt; retain
+applicable notices when redistributing earlier MIT-covered material.
+
+Keep existing author, copyright and license notices. This declaration does
+not add a custom requirement for permanent visible branding or UI credits.
+It does not change the licenses of independently licensed third-party works.

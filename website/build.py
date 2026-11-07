@@ -64,7 +64,7 @@ COPY = {
         'faq_label': 'A few things to know',
         'faq': [
             ('Is it ready for everyone?', f'This is version {VERSION}: an early release for trying the project and helping improve it. Test it on your hosting and keep backups before trusting it with important work.'),
-            ('Is it really free?', 'Yes. AlternPress is released under the MIT license. You can use it, study it and modify it. The code and release archives are available on GitHub.'),
+            ('Is it really free?', 'Yes. The current source is licensed under GNU GPL version 3 only (GPL-3.0-only). The 0.5.0-alpha downloads keep their original MIT license; earlier grants are not revoked. Source and license notices are available on GitHub.'),
             ('Can I change the theme and favicon?', f'The latest source includes optional local theme and favicon files. Your existing look stays unchanged until you add them. See the <a href="{QUICKSTART}">short customization guide</a>; these additions are not in the 0.5.0-alpha download above.'),
             ('Does it need outside services?', 'The blog runs on your own PHP hosting. Its CSS, JavaScript and Markdown renderer are included. It does not load CDNs, remote fonts or analytics. Checking external links only contacts those links when you ask it to.'),
             ('How does HTML page caching work?', 'AlternPress caches public HTML and prepares Brotli quality 11 versions when a local encoder is available on your server. The cache refreshes when published content changes. Gzip or ordinary HTML provides a compatible fallback; Brotli is optional.'),
@@ -74,7 +74,7 @@ COPY = {
         ],
         'closing_label': 'Less to maintain. More room to write.', 'closing_title': 'Something to say?<br><em>Start here.</em>',
         'alpha_note': 'Early release. Read the guide and keep a backup.',
-        'release_link': 'Release notes', 'archive_link': 'Download .tar.gz', 'license': 'MIT license',
+        'release_link': 'Release notes', 'archive_link': 'Download .tar.gz', 'license': 'Source license: GPLv3',
         'footer': 'For those who have something to say.', 'footer_note': 'This website uses no cookies, tracking or external assets.',
         'error_title': 'This page isn’t here.', 'error_body': 'You may have followed a link to the previous website. AlternPress now has a new home for the project.', 'error_link': 'Go to the project website',
     },
@@ -128,7 +128,7 @@ COPY = {
         'faq_label': 'Qualche cosa da sapere',
         'faq': [
             ('È già pronto per tutti?', f'Questa è la versione {VERSION}: una prima release per provare il progetto e contribuire a migliorarlo. Verificala sul tuo hosting e conserva backup prima di affidarle contenuti importanti.'),
-            ('È davvero gratuito?', 'Sì. AlternPress è distribuito con licenza MIT. Puoi usarlo, studiarlo e modificarlo. Il codice e gli archivi delle release sono disponibili su GitHub.'),
+            ('È davvero gratuito?', 'Sì. Il sorgente attuale è distribuito sotto GNU GPL versione 3 soltanto (GPL-3.0-only). I download 0.5.0-alpha conservano la licenza MIT originaria; i diritti già concessi non sono revocati. Sorgente e avvisi di licenza sono disponibili su GitHub.'),
             ('Posso cambiare tema e favicon?', f'Il codice più recente include file locali facoltativi per tema e favicon. Il tuo stile resta invariato finché non li aggiungi. Leggi la <a href="{QUICKSTART}">guida rapida alla personalizzazione</a>: queste novità non sono nel download 0.5.0-alpha qui sopra.'),
             ('Ha bisogno di servizi esterni?', 'Il blog funziona sul tuo hosting PHP. CSS, JavaScript e motore Markdown sono inclusi. Non carica CDN, font remoti o analytics. Il controllo dei link esterni contatta quei link solo quando lo richiedi.'),
             ('Come funziona la cache delle pagine HTML?', 'AlternPress conserva in cache le pagine HTML pubbliche e prepara versioni Brotli a qualità 11 quando sul server è disponibile un encoder locale. La cache si rinnova quando cambiano i contenuti pubblicati. Gzip o HTML normale garantiscono una risposta compatibile; Brotli è facoltativo.'),
@@ -138,7 +138,7 @@ COPY = {
         ],
         'closing_label': 'Meno da mantenere. Più spazio per scrivere.', 'closing_title': 'Qualcosa da dire?<br><em>Comincia qui.</em>',
         'alpha_note': 'Versione iniziale. Leggi la guida e conserva un backup.',
-        'release_link': 'Note della release', 'archive_link': 'Scarica .tar.gz', 'license': 'Licenza MIT',
+        'release_link': 'Note della release', 'archive_link': 'Scarica .tar.gz', 'license': 'Licenza sorgente: GPLv3',
         'footer': 'Solo per chi ha qualcosa da dire.', 'footer_note': 'Questo sito non usa cookie, tracciamento o risorse esterne.',
         'error_title': 'Questa pagina non c’è.', 'error_body': 'Forse hai seguito un link al vecchio sito. AlternPress ora ha una nuova casa dedicata al progetto.', 'error_link': 'Vai al sito del progetto',
     },
@@ -234,7 +234,7 @@ def render(lang):
     <div class="download-links"><a href="{RELEASE}">{c['release_link']}</a><a href="{TAR}">{c['archive_link']}</a><a href="{ZIP}.sha256">SHA-256</a></div>
   </div></section>
 </main>
-<footer class="site-footer wrap"><div><a class="brand" href="{path}">alternpress<span class="brand-dot">.</span></a><p>{c['footer']}</p></div><div class="footer-right"><nav aria-label="{'Risorse' if lang == 'it' else 'Resources'}"><a href="{REPO}">GitHub ↗</a><a href="{guide}">{c['guide']}</a><a href="{RELEASE_SOURCE}/LICENSE">{c['license']}</a></nav><p>{c['footer_note']}</p></div></footer>
+<footer class="site-footer wrap"><div><a class="brand" href="{path}">alternpress<span class="brand-dot">.</span></a><p>{c['footer']}</p></div><div class="footer-right"><nav aria-label="{'Risorse' if lang == 'it' else 'Resources'}"><a href="{REPO}">GitHub ↗</a><a href="{guide}">{c['guide']}</a><a href="{REPO}/blob/main/LICENSE">{c['license']}</a></nav><p>{c['footer_note']}</p></div></footer>
 </body>
 </html>
 '''
