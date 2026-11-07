@@ -613,14 +613,8 @@ function render_layout(string $language, string $relativePath, string $title, st
 </main>
 
 <footer class="container footer">
-
-  <small>© <?= date('Y') ?> <div id="legal-info" class="footer-credits"> </div> <?= h($text['footer']) ?><?php if (ap_config('email') !== ''): ?> · <?= protected_email_link(ap_config('email'), 'Email') ?><?php endif; ?></small>
+  <small>© <?= date('Y') ?> <span id="legal-info" class="footer-credits"><?= h(ap_config('legal')) ?></span> <?= h($text['footer']) ?><?php if (ap_config('email') !== ''): ?> · <?= protected_email_link(ap_config('email'), 'Email') ?><?php endif; ?></small>
 </footer>
-<script>
-        // Offuscamento base per impedire il facile scraping testuale della P.IVA
-        const info = <?= json_encode(ap_config('legal'), JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT) ?>;
-        document.getElementById('legal-info').textContent = info;
-    </script>
 <script>
 (() => {
   document.querySelectorAll('.js-protected-email[data-e]').forEach((link) => {

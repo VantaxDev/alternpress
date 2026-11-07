@@ -13,6 +13,15 @@ RELEASE_SOURCE = REPO + '/blob/v' + VERSION
 DISCOVERY_GUIDE = RELEASE_SOURCE + '/README-AI.md'
 QUICKSTART = REPO + '/blob/main/QUICKSTART.md'
 
+# Identity belongs only to the owned project website, not third-party blog installs.
+# SSI is evaluated by Apache per response; the complete rendered VAT is indexable.
+BUSINESS_FOOTER = ('<p class="business-identity">© '
+    '<!--#config timefmt="%Y" --><!--#echo var="DATE_LOCAL" --> '
+    'SERVER TAMER DI DANIELE VANTAGGIATO - P.IVA '
+    '<!--#set var="vat_a" value="043" --><!--#set var="vat_b" value="706" -->'
+    '<!--#set var="vat_c" value="00274" -->'
+    '<!--#echo var="vat_a" --><!--#echo var="vat_b" --><!--#echo var="vat_c" --></p>')
+
 COPY = {
     'en': {
         'title': 'AlternPress — For those who have something to say.',
@@ -234,7 +243,7 @@ def render(lang):
     <div class="download-links"><a href="{RELEASE}">{c['release_link']}</a><a href="{TAR}">{c['archive_link']}</a><a href="{ZIP}.sha256">SHA-256</a></div>
   </div></section>
 </main>
-<footer class="site-footer wrap"><div><a class="brand" href="{path}">alternpress<span class="brand-dot">.</span></a><p>{c['footer']}</p></div><div class="footer-right"><nav aria-label="{'Risorse' if lang == 'it' else 'Resources'}"><a href="{REPO}">GitHub ↗</a><a href="{guide}">{c['guide']}</a><a href="{REPO}/blob/main/LICENSE">{c['license']}</a></nav><p>{c['footer_note']}</p></div></footer>
+<footer class="site-footer wrap"><div><a class="brand" href="{path}">alternpress<span class="brand-dot">.</span></a><p>{c['footer']}</p></div><div class="footer-right"><nav aria-label="{'Risorse' if lang == 'it' else 'Resources'}"><a href="{REPO}">GitHub ↗</a><a href="{guide}">{c['guide']}</a><a href="{REPO}/blob/main/LICENSE">{c['license']}</a></nav><p>{c['footer_note']}</p>{BUSINESS_FOOTER}</div></footer>
 </body>
 </html>
 '''
@@ -253,8 +262,8 @@ def build():
 ''', encoding='utf-8')
     (ROOT / '404.html').write_text('''<!doctype html>
 <html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><meta name="robots" content="noindex"><title>Page not found — AlternPress</title><link rel="icon" href="/assets/mark.svg" type="image/svg+xml"><link rel="stylesheet" href="/assets/site.css"></head>
-<body><main class="wrap error-page"><a class="brand" href="/">alternpress<span class="brand-dot">.</span></a><p class="eyebrow">404</p><h1>This page isn’t here.</h1><p>You may have followed a link to the previous website.</p><a class="button" href="/">Discover AlternPress →</a><hr><div lang="it"><h2>Questa pagina non c’è.</h2><p>Forse hai seguito un link al vecchio sito.</p><a class="text-link" href="/it/">Scopri il progetto AlternPress →</a></div></main></body></html>
-''', encoding='utf-8')
+<body><main class="wrap error-page"><a class="brand" href="/">alternpress<span class="brand-dot">.</span></a><p class="eyebrow">404</p><h1>This page isn’t here.</h1><p>You may have followed a link to the previous website.</p><a class="button" href="/">Discover AlternPress →</a><hr><div lang="it"><h2>Questa pagina non c’è.</h2><p>Forse hai seguito un link al vecchio sito.</p><a class="text-link" href="/it/">Scopri il progetto AlternPress →</a></div></main>BUSINESS_ERROR_FOOTER</body></html>
+'''.replace('BUSINESS_ERROR_FOOTER', '<footer class="site-footer wrap">' + BUSINESS_FOOTER + '</footer>'), encoding='utf-8')
     print('Built English and Italian pages, 404, robots.txt and sitemap.xml.')
 
 
