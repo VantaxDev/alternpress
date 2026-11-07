@@ -7,6 +7,10 @@ declare(strict_types=1);
  */
 final class Parsedown {
     public const MAX_BYTES = 2097152;
+    // Share the supported block grammar with table continuation lookahead.
+    private const HEADING = '/^(#{1,6})\s+(.*)$/';
+    private const LIST_ITEM = '/^\s*(?:([-*+])|([0-9]+)\.)\s+(.*)$/';
+    private const QUOTE = '/^\s*>\s?(.*)$/';
     public function setSafeMode(bool $enabled): void { /* HTML is always escaped. */ }
     private function esc(string $text): string { return htmlspecialchars($text, ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8'); }
     private function safeUrl(string $url): string {
@@ -110,6 +114,13 @@ final class Parsedown {
             || ($match[2][0] === '`' && str_contains($match[3], '`'))) return null;
         return $match;
     }
+    private function interruptsTable(string $line): bool {
+        if ($this->openingFence($line) !== null) return true;
+        $line = rtrim($line);
+        return preg_match(self::HEADING, $line) === 1
+            || preg_match(self::LIST_ITEM, $line) === 1
+            || preg_match(self::QUOTE, $line) === 1;
+    }
     public function text(string $markdown): string {
         if (strlen($markdown) > self::MAX_BYTES) throw new RuntimeException('Markdown exceeds the 2 MB limit.');
         $lines = explode("\n", str_replace(["\r\n", "\r"], "\n", $markdown));
@@ -141,7 +152,7 @@ final class Parsedown {
             }
             $line = rtrim($rawLine);
             if (trim($line) === '') { $flush(); continue; }
-            if (preg_match('/^(#{1,6})\s+(.*)$/', $line, $m)) {
+            if (preg_match(self::HEADING, $line, $m)) {
                 $flush(); $level = strlen($m[1]); $html[] = '<h' . $level . '>' . $this->inline($m[2]) . '</h' . $level . '>'; continue;
             }
             // Thematic breaks take precedence over list markers. Require at
@@ -149,7 +160,7 @@ final class Parsedown {
             if (preg_match('/^ {0,3}(?:(?:-[ \t]*){3,}|(?:\*[ \t]*){3,}|(?:_[ \t]*){3,})$/D', $line)) {
                 $flush(); $html[] = '<hr>'; continue;
             }
-            if (preg_match('/^\s*(?:([-*+])|([0-9]+)\.)\s+(.*)$/', $line, $m)) {
+            if (preg_match(self::LIST_ITEM, $line, $m)) {
                 $type = $m[1] !== '' ? 'ul' : 'ol';
                 if ($list !== $type) {
                     $flush();
@@ -161,7 +172,7 @@ final class Parsedown {
                 }
                 $html[] = '<li>' . $this->inline($m[3]) . '</li>'; continue;
             }
-            if (preg_match('/^\s*>\s?(.*)$/', $line, $m)) {
+            if (preg_match(self::QUOTE, $line, $m)) {
                 $flush(); $html[] = '<blockquote>' . $this->inline($m[1]) . '</blockquote>'; continue;
             }
             if (str_contains($line, '|') && isset($lines[$i + 1])) {
@@ -173,7 +184,7 @@ final class Parsedown {
                     foreach ($headers as $cell) $html[] = '<th>' . $this->inline($cell) . '</th>';
                     $html[] = '</tr></thead><tbody>'; $i++;
                     while (isset($lines[$i + 1]) && str_contains($lines[$i + 1], '|') && trim($lines[$i + 1]) !== ''
-                        && $this->openingFence($lines[$i + 1]) === null) {
+                        && !$this->interruptsTable($lines[$i + 1])) {
                         $row = $this->cells($lines[++$i]); $html[] = '<tr>';
                         foreach ($headers as $column => $_) $html[] = '<td>' . $this->inline($row[$column] ?? '') . '</td>';
                         $html[] = '</tr>';
