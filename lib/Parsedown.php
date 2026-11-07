@@ -103,6 +103,13 @@ final class Parsedown {
         $line = preg_replace('/^\||(?<!\\\\)\|$/', '', $line);
         return array_map(static fn($cell) => trim(str_replace('\\|', '|', $cell)), preg_split('/(?<!\\\\)\|/', $line));
     }
+    private function openingFence(string $line): ?array {
+        // Share this boundary rule with table lookahead. Backtick info cannot
+        // contain backticks; ignored info must never become HTML attributes.
+        if (!preg_match('/^( {0,3})(`{3,}|~{3,})(.*)$/D', $line, $match)
+            || ($match[2][0] === '`' && str_contains($match[3], '`'))) return null;
+        return $match;
+    }
     public function text(string $markdown): string {
         if (strlen($markdown) > self::MAX_BYTES) throw new RuntimeException('Markdown exceeds the 2 MB limit.');
         $lines = explode("\n", str_replace(["\r\n", "\r"], "\n", $markdown));
@@ -127,10 +134,7 @@ final class Parsedown {
                 }
                 continue;
             }
-            // A backtick info string cannot contain backticks. Info strings
-            // are intentionally ignored, never interpolated into attributes.
-            if (preg_match('/^( {0,3})(`{3,}|~{3,})(.*)$/D', $rawLine, $m)
-                && ($m[2][0] !== '`' || !str_contains($m[3], '`'))) {
+            if (($m = $this->openingFence($rawLine)) !== null) {
                 $flush(); $code = [];
                 $fenceMarker = $m[2][0]; $fenceLength = strlen($m[2]); $fenceIndent = strlen($m[1]);
                 continue;
@@ -168,7 +172,8 @@ final class Parsedown {
                     $flush(); $html[] = '<div class="overflow-auto"><table><thead><tr>';
                     foreach ($headers as $cell) $html[] = '<th>' . $this->inline($cell) . '</th>';
                     $html[] = '</tr></thead><tbody>'; $i++;
-                    while (isset($lines[$i + 1]) && str_contains($lines[$i + 1], '|') && trim($lines[$i + 1]) !== '') {
+                    while (isset($lines[$i + 1]) && str_contains($lines[$i + 1], '|') && trim($lines[$i + 1]) !== ''
+                        && $this->openingFence($lines[$i + 1]) === null) {
                         $row = $this->cells($lines[++$i]); $html[] = '<tr>';
                         foreach ($headers as $column => $_) $html[] = '<td>' . $this->inline($row[$column] ?? '') . '</td>';
                         $html[] = '</tr>';
