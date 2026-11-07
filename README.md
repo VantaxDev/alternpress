@@ -161,6 +161,38 @@ links, pictures, quotes, ordered/unordered lists, fenced code and simple tables.
 Raw HTML is shown as text. This is a deliberately small parser, not a full
 CommonMark implementation. Translations are written by the editor, not automatic.
 
+### Fenced code examples
+
+Use at least three backticks or tildes. A closing fence must use the same
+character, be at least as long as the opener, and have only spaces/tabs after it.
+For example, four backticks let an example contain triple-backtick fences:
+
+`````markdown
+````markdown
+```php
+<?php echo "literal example";
+```
+````
+`````
+
+Openers/closers allow up to three leading spaces. Up to the opener's indentation
+is removed from each code line; other spaces and tabs are preserved. Four-space
+or tab-indented openers are not top-level fences. A backtick opener cannot have
+backticks in its info text. Info text such as `php` is accepted but ignored:
+there are no generated language classes, attributes or syntax highlighter.
+An unclosed block stays literal through the end of the document. Code is always
+HTML-escaped, and Markdown links/images/formatting inside it are not executed.
+The diagnostics link checker uses the same fence boundaries.
+
+This follows the basic fence rules in [CommonMark section 4.5](https://spec.commonmark.org/0.31.2/#fenced-code-blocks),
+not full CommonMark conformance: nested list/quote containers and indented code
+blocks are outside this small parser's supported subset. Inline code supports
+backtick runs of equal length, including multiple backticks; unmatched runs stay
+literal. See [inline code rules and limits](docs/markdown-inline-code.md).
+Existing ordinary triple-backtick blocks remain supported. Malformed legacy
+blocks that relied on a short, mixed or text-suffixed closer now stay code until
+a valid closer or EOF; adjust their delimiters if that was not intended.
+
 ## Public page cache and compression
 
 AlternPress keeps prepared public HTML pages in its private `cache/` directory.
@@ -373,6 +405,13 @@ private articles. The example content in the clean release is generic.
 ## Checks
 
 `php tests/run.php` runs focused Markdown and path regression checks.
+`php tests/markdown-inline.php` covers matching multi-backtick inline code,
+literal/XSS handling and large malformed inputs. See
+[inline code syntax and limits](docs/markdown-inline-code.md).
+`php tests/markdown-lists.php` covers ordered-list numbering and list boundaries.
+Ordered lists preserve their first marker (up to nine digits, including zero);
+subsequent markers do not restart numbering. Longer markers retain the legacy
+default start of 1. This is not a general CommonMark list parser.
 The alpha was also exercised through HTTP for authentication, CSRF, private
 paths, draft visibility, bilingual publication, uploads, conflicts and relocation.
 
@@ -382,8 +421,8 @@ Version 0.4 hardens filesystem boundaries, session and form validation, image
 uploads, draft visibility, Markdown rendering and backup restore. See
 [SECURITY.md](SECURITY.md) for the deployment boundary and interruption recovery.
 
-Run every `tests/*.php` file with PHP, followed by
-`python3 tests/security-http.py`, `python3 tests/discovery-http.py` and
-`python3 tests/page-cache-http.py`. Tests create temporary fixtures with generic
+Run every `tests/*.php` file with PHP, followed by every `tests/*.py` file with
+Python 3, including the password CLI regression. CI discovers both file sets
+automatically. Tests create temporary fixtures with generic
 data; they do not modify a live installation. Python is used only for HTTP tests,
 not by the application. GitHub CI repeats the suite on pushes and pull requests.

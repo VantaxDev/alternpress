@@ -16,6 +16,25 @@ descrive anche struttura, permessi, ripristino e limiti del formato Markdown.
 JSON-LD, knowledge graph, sitemap multilingua e `llms.txt` vengono generati
 automaticamente dai contenuti pubblicati. Consulta la [guida alla lettura da parte delle AI](README-AI.md).
 
+## Blocchi di codice Markdown
+
+Sono supportate fence di almeno tre backtick oppure tilde (`~~~`). La chiusura
+usa lo stesso carattere, lungo almeno quanto l’apertura, seguito solo da spazi o
+tabulazioni. Un’apertura con quattro backtick permette quindi di mostrare una
+fence tripla come testo. Sono ammessi al massimo tre spazi iniziali; quelli
+dell’apertura vengono rimossi, fino a quel numero, da ogni riga del codice.
+Il contenuto mantiene gli altri spazi ed è sempre mostrato come testo escapato,
+anche nell’anteprima; il controllo dei link ignora gli esempi nel codice. L’indicazione della lingua viene ignorata:
+nessun attributo HTML o evidenziatore viene generato. Senza chiusura valida, il
+blocco continua fino alla fine del documento.
+
+Non è un parser CommonMark completo: contenitori annidati e codice indentato
+non sono inclusi. Il codice inline supporta sequenze di backtick della stessa
+lunghezza, anche multiple; quelle senza chiusura restano letterali.
+[Regole e limiti inline](docs/markdown-inline-code.md). Gli esempi tripli validi restano
+compatibili; chiusure più corte, miste o con testo finale non chiudono più il
+blocco. [Regole, esempio e limiti dettagliati](README.md#fenced-code-examples).
+
 ## Installazione
 
 Servono PHP 8.2+ con le estensioni mbstring, fileinfo, GD, sessioni e JSON,
@@ -280,6 +299,9 @@ contiene credenziali cifrate, impostazioni e contenuti del sito. `.gitignore`
 esclude configurazione privata, credenziali, cache e foto caricate.
 
 `php tests/run.php` esegue le verifiche di regressione del renderer e dei percorsi.
+`php tests/markdown-inline.php` verifica il codice inline con più backtick,
+escaping/XSS e input malformati estesi. Vedi
+[sintassi e limiti](docs/markdown-inline-code.md).
 
 ## Sicurezza e test della versione 0.4
 
