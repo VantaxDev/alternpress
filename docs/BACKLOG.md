@@ -1,8 +1,8 @@
 # Prioritized correctness backlog
 
-Statuses describe source candidates, not merged or deployed behavior.
+Statuses describe the integrated source; deployment is a separate operation.
 
-## P1 — Table/fence boundary (implemented, awaiting review)
+## P1 — Table/fence boundary (integrated via PR #15)
 
 A table followed immediately by `~~~lang|extra` or a valid backtick equivalent
 used to consume the fence and its pipe-bearing content as table rows. Links or
@@ -17,7 +17,7 @@ Invalid backtick info, short markers and unsupported indentation stay rows.
 table body, EOF, near closers, CRLF, diagnostics, public/editor rendering and
 500 alternating table/fence blocks. No broader table grammar is introduced.
 
-## P2 — Table/block interruption rules (implemented, awaiting review)
+## P2 — Table/block interruption rules (implemented and integration-tested)
 
 Pipe-bearing headings, list items and quotes now end a preceding table without
 a blank line, using exactly the same patterns as standalone blocks. Previously
@@ -25,7 +25,7 @@ they became rows; extra cells, including real link targets, could be discarded.
 `tests/markdown-table-blocks.php` covers exact HTML, header-only tables, supported
 indentation, invalid lookalikes, explicit pipe-prefixed rows, CRLF, EOF,
 diagnostics, public/editor rendering and 500 alternating tables/blocks.
-This is a local follow-up stacked on the P1 candidate, not merged or deployed.
+This follows the P1 fix in the integrated source; no live deployment is implied.
 
 The existing heading/list/quote grammar is preserved, including its indentation
 limits and flat containers. To keep a marker-bearing line as a table row, use
@@ -38,9 +38,11 @@ Mixed text/image link labels, multiple images per link, arbitrary nested labels,
 parenthesized URL destinations and nested containers remain unsupported.
 Do not broaden these implicitly while fixing unrelated escaping or boundaries.
 
-## Pending integration, not new work
+## Integrated review history
 
-The combined Markdown changes are already proposed in PR #13, including the
-list-start and thematic-break fixes. PR #14 separately proposes GPL-3.0-only
-with prior MIT notices retained. Preserve those review histories; do not
-duplicate their implementation or infer that either PR is merged.
+The combined Markdown changes were merged in PR #13, including list starts
+and thematic breaks. PR #14 established GPL-3.0-only for current source with
+prior MIT notices retained. PR #15 integrated the table/fence boundary.
+Preserve those histories and do not reapply stale alternative implementations.
+The table/block follow-up is included with the combined feature integration;
+the remaining P3 limits above are deliberate, not undelivered ready code.

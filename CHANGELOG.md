@@ -2,6 +2,13 @@
 
 ## Unreleased
 
+- Integrate the opt-in verified code updater, configurable language list,
+  server-rendered business footer and cookie-free public language routing.
+- Keep site-specific policy drafts outside the distribution; optional notices
+  require owner-supplied published content and respect scheduled visibility.
+- Include the reviewed Markdown/table fixes and preserve GPL-3.0-only plus
+  historical MIT notices in source distributions and updater packages.
+
 - Fix false missing-link reports in `alt-cli links:check` for generated discovery
   resources, including language sitemaps and installations in a subdirectory.
 

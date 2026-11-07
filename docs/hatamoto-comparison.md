@@ -73,7 +73,8 @@ the explicit timestamp when present; the visible editorial date is unchanged.
   implementations must use the shared publication predicate, not raw files.
 - Cache fingerprinting already reads source bytes. This adds bounded front-matter
   parsing and a state bit, not a time-varying per-second cache key or database scan.
-- PRs #5/#6/#8 remain independent and unapproved for merge/deployment here.
+- Updater, configured-language and CLI modules are covered by the combined
+  integration regressions. Deployment remains a separate operator decision.
 
 ## Ranked next candidates (proposals, not delivered Hatamoto features)
 
