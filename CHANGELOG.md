@@ -5,6 +5,13 @@
 - Fix false missing-link reports in `alt-cli links:check` for generated discovery
   resources, including language sitemaps and installations in a subdirectory.
 
+- Schedule translations with an explicit-offset `publish_at` Markdown timestamp
+  and editor field. Drafts remain private; invalid timestamps fail private.
+- Revalidate public lists, discovery, language links and prepared HTML/compressed
+  caches at publication boundaries without a database, cron or filesystem writes.
+- Keep editorial dates and legacy articles backward compatible; expose scheduled
+  and invalid-time states in the dashboard and retain authenticated safe previews.
+
 ## 0.5.0-alpha — 2026-10-29
 
 - Generate safe Schema.org JSON-LD on published pages and articles, with stable
