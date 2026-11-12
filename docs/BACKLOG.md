@@ -38,6 +38,15 @@ Mixed text/image link labels, multiple images per link, arbitrary nested labels,
 parenthesized URL destinations and nested containers remain unsupported.
 Do not broaden these implicitly while fixing unrelated escaping or boundaries.
 
+## Diagnostics — Missing required trees (local candidate, 2026-11-13)
+
+A missing required directory now marks the inventory incomplete, retaining its
+existing error and suppressing orphan-photo candidates. Previously an absent
+content tree could leave a supposedly complete report listing remaining media
+as unused. `tests/diagnostics-missing-directories.php` covers each required tree,
+error paths/counts, suppression and recovery after restoring the directory.
+This independent candidate is based on main; no merge or deployment is implied.
+
 ## Integrated review history
 
 The combined Markdown changes were merged in PR #13, including list starts
