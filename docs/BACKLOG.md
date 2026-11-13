@@ -38,6 +38,17 @@ Mixed text/image link labels, multiple images per link, arbitrary nested labels,
 parenthesized URL destinations and nested containers remain unsupported.
 Do not broaden these implicitly while fixing unrelated escaping or boundaries.
 
+## Local candidate — Required diagnostics directory types (2026-11-14)
+
+If `content`, `cache`, `storage` or `media` is a regular file rather than a
+directory, diagnostics now reports `not_directory` with the exact path and marks
+the inventory incomplete. Orphan-photo candidates are suppressed using the
+existing completeness guard. Ordinary nested files remain valid inventory.
+`tests/diagnostics-directory-types.php` covers all four paths, error counts,
+restoration and read-only behavior. This independent candidate is based on
+`b530505`; it does not include the separate missing-directory candidate or imply
+integration/deployment. No Markdown subset extension or new dependency is needed.
+
 ## Integrated review history
 
 The combined Markdown changes were merged in PR #13, including list starts

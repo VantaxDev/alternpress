@@ -85,7 +85,7 @@ final class AP_Diagnostics
         return true;
     }
 
-    private function walk(string $relative, bool $permissions): void
+    private function walk(string $relative, bool $permissions, bool $requiredDirectory = false): void
     {
         if (!$this->withinBudget()) return;
         $path = $this->root . '/' . $relative;
@@ -101,6 +101,12 @@ final class AP_Diagnostics
             return;
         }
         $directory = is_dir($path);
+        if ($requiredDirectory && !$directory) {
+            $this->report['complete'] = false;
+            $this->issue('error', 'not_directory', 'Il percorso necessario non è una cartella.', 'Required path is not a directory.', $relative);
+            $this->report['summary']['permission_issues']++;
+            return;
+        }
         if (!$directory && !is_file($path)) return;
         $readable = is_readable($path);
         $writable = is_writable($path);
@@ -281,7 +287,7 @@ final class AP_Diagnostics
     public function run(): array
     {
         clearstatcache();
-        foreach (['content', 'cache', 'storage', 'media'] as $directory) $this->walk($directory, true);
+        foreach (['content', 'cache', 'storage', 'media'] as $directory) $this->walk($directory, true, true);
         if (is_dir($this->root . '/assets')) $this->walk('assets', false);
         foreach ($this->files as $relative => $_) {
             if (!str_starts_with($relative, 'content/') || strtolower(pathinfo($relative, PATHINFO_EXTENSION)) !== 'md') continue;
