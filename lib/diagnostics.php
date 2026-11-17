@@ -96,6 +96,9 @@ final class AP_Diagnostics
             return;
         }
         if (!file_exists($path)) {
+            // A missing required tree is not a complete inventory. In particular,
+            // absent content must never make remaining media look safely unused.
+            $this->report['complete'] = false;
             $this->issue('error', 'missing_directory', 'Cartella necessaria mancante.', 'Required directory is missing.', $relative);
             $this->report['summary']['permission_issues']++;
             return;
