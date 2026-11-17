@@ -38,14 +38,41 @@ Mixed text/image link labels, multiple images per link, arbitrary nested labels,
 parenthesized URL destinations and nested containers remain unsupported.
 Do not broaden these implicitly while fixing unrelated escaping or boundaries.
 
-## Diagnostics — Missing required trees (local candidate, 2026-11-13)
+## P1 — Missing required trees (review candidate, 2026-11-17)
 
-A missing required directory now marks the inventory incomplete, retaining its
-existing error and suppressing orphan-photo candidates. Previously an absent
-content tree could leave a supposedly complete report listing remaining media
-as unused. `tests/diagnostics-missing-directories.php` covers each required tree,
-error paths/counts, suppression and recovery after restoring the directory.
-This independent candidate is based on main; no merge or deployment is implied.
+This branch promotes the existing Nov 13 runtime fix: missing content, cache,
+storage or media now makes the inventory incomplete and suppresses unreliable
+orphan-photo candidates. Existing missing-directory errors and counts remain.
+`tests/diagnostics-missing-directories.php` verifies all four trees, suppression,
+recovery and preservation of media bytes (38 checks). No deletion is performed.
+The original candidate is preserved; the other six candidates below are not
+included. This is reviewable source, not a merged fix or deployment.
+
+## Pending diagnostics correctness review (not integrated)
+
+The integrated diagnostics still has the following correctness gaps. Local
+candidates exist, but are independent changes based on `b530505`, not a combined
+or deployment-tested release. Review their overlap before integration; do not
+reapply them as new fixes merely because main still exhibits the defects.
+
+| Gap | Existing local candidate | Commit |
+| --- | --- | --- |
+| Future/invalid-time publications accepted as public link destinations | `fix/diagnostics-scheduled-targets-2026-11-09` | `bf9e1e3` |
+| Uppercase HTTP(S) schemes infer incorrect default ports | `fix/diagnostics-url-scheme-2026-11-10` | `2ea9a74` |
+| Nested aliases select a shorter prefix before the more specific one | `fix/diagnostics-alias-prefix-2026-11-11` | `2c958f0` |
+| Raw CSS/cover URLs are incorrectly HTML-entity-decoded | `fix/diagnostics-raw-url-entities-2026-11-12` | `f6291d3` |
+| Missing required directories leave scan completeness true (fix in this review branch) | `fix/diagnostics-missing-directories-2026-11-13` | `00ec8a2` |
+| Required paths of the wrong type leave scan completeness true | `fix/diagnostics-directory-types-2026-11-14` | `e194221` |
+| Unsupported filesystem entries are silently skipped | `fix/diagnostics-special-files-2026-11-15` | `517a3b3` |
+
+The scan-completeness gaps can produce unreliable orphan-photo candidates.
+Diagnostics never deletes these candidates; manually verify references before
+acting on them. The URL and publication candidates affect the same diagnostics
+module, while publication also introduces a shared runtime module and updater
+packaging requirements. Individual passing tests do not establish combined
+compatibility. Re-run the full regression suite on any combined candidate.
+These branch names identify local review work, not published PRs or promises
+of availability in a released version. Markdown P3 limits above remain deliberate.
 
 ## Integrated review history
 
