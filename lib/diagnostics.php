@@ -206,7 +206,7 @@ final class AP_Diagnostics
     /** Resolve only URL paths; do not perform DNS, HTTP or access private storage. */
     private function resolve(string $url, string $context): array
     {
-        $url = trim(html_entity_decode($url, ENT_QUOTES | ENT_HTML5, 'UTF-8'));
+        $url = trim($url);
         if ($url === '' || str_starts_with($url, '#') || preg_match('/^(?:mailto|tel|data):/i', $url)) return ['skip', ''];
         if (str_starts_with($url, '@media/')) $url = '/media/' . substr($url, 7);
         $parts = parse_url($url);
@@ -322,7 +322,10 @@ final class AP_Diagnostics
                 $key = $link[1] . ':' . $link[2];
                 if (isset($seen[$key])) continue;
                 $seen[$key] = true;
-                $this->checkLink($link[2], $relative, $context, $link[1] === 'img');
+                // Only rendered attributes carry HTML entities; CSS and metadata
+                // already contain raw URLs and must not be decoded as HTML.
+                $url = html_entity_decode($link[2], ENT_QUOTES | ENT_HTML5, 'UTF-8');
+                $this->checkLink($url, $relative, $context, $link[1] === 'img');
             }
             $cover = (string) ($document['meta']['cover'] ?? '');
             if ($cover !== '') {
