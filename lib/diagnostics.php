@@ -60,7 +60,7 @@ final class AP_Diagnostics
             $url = parse_url((string) $this->options[$setting]);
             if (!is_array($url) || empty($url['host'])) continue;
             $prefix = $setting === 'origin' ? $this->base : rtrim($url['path'] ?? '', '/');
-            $key = strtolower($url['host']) . ':' . ($url['port'] ?? (($url['scheme'] ?? 'https') === 'https' ? 443 : 80));
+            $key = strtolower($url['host']) . ':' . ($url['port'] ?? (strtolower($url['scheme'] ?? 'https') === 'https' ? 443 : 80));
             $this->aliases[$key][] = $prefix;
         }
         // A canonical URL may be nested beneath the installation URL on the
@@ -221,7 +221,7 @@ final class AP_Diagnostics
         if (isset($parts['scheme']) && !in_array(strtolower($parts['scheme']), ['http', 'https'], true)) return ['skip', ''];
         $path = rawurldecode($parts['path'] ?? '');
         if (isset($parts['host'])) {
-            $port = $parts['port'] ?? (($parts['scheme'] ?? 'https') === 'https' ? 443 : 80);
+            $port = $parts['port'] ?? (strtolower($parts['scheme'] ?? 'https') === 'https' ? 443 : 80);
             $key = strtolower($parts['host']) . ':' . $port;
             foreach ($this->aliases[$key] ?? [] as $prefix) {
                 if ($prefix !== '' && $path !== $prefix && !str_starts_with($path, $prefix . '/')) continue;

@@ -92,6 +92,18 @@ Stacked explicitly on PR20 head `a4bebc6` (PR19/18 below it), not on main or PR1
 Original candidate preserved. Scheme-case/publication candidates remain separate;
 no combined compatibility claim for them. No public routing changes.
 
+## P1 — Case-insensitive URL scheme defaults (stacked review, Nov19)
+
+Promotes existing `2ea9a74`: lowercase the scheme when inferring default ports
+at both alias registration and link resolution. Upper/mixed-case HTTPS must
+use443, not80. Explicit ports and host/port matching are unchanged. Original209
+checks plus10 interactions cover mixed-case nested canonical aliases, raw entity
+retention and partial-inventory orphan suppression.
+
+Stacked on PR21 head `eee6da7` (PR20/19/18 below), not main or PR17. Original
+candidate preserved. Publication-timing candidate remains independent. No public
+routing change; HTTP(S) URLs are not fetched by diagnostics or these tests.
+
 ## Pending diagnostics correctness review (not integrated)
 
 The integrated diagnostics still has the following correctness gaps. Local
