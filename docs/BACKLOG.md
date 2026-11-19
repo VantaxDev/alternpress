@@ -52,6 +52,20 @@ special-file fixes remain separate; no combined compatibility is claimed.
 PR #17 was rechecked Nov 19: OPEN draft at `6190cfb`, both CI runs successful.
 Its Nov 18 test-only follow-up and Nov 19 handoff remain preserved separately.
 
+## P1 — Special filesystem entries (stacked draft review, Nov 19)
+
+Promotes the existing Nov15 `517a3b3` implementation, with interaction tests on
+PR18 head `a8e8567`. Nested FIFO/socket/device entries cannot be read as normal
+sources: report a path-specific warning, mark the inventory incomplete and
+suppress orphan suggestions. No special entry is opened or removed by scanning.
+Required top-level paths retain PR18's `not_directory` error; mixed fixtures
+verify that an adjacent nested FIFO still gets exactly one warning.
+
+This branch is stacked on `fix/diagnostics-directory-types-review` (PR18), not
+on main or PR17. Original local candidate remains preserved. Unix FIFO/socket
+fixtures are covered; Windows skips this Unix-only test and devices are not
+created. Other publication/URL candidates remain independent and unintegrated.
+
 ## Pending diagnostics correctness review (not integrated)
 
 The integrated diagnostics still has the following correctness gaps. Local
