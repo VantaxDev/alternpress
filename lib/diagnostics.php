@@ -63,6 +63,13 @@ final class AP_Diagnostics
             $key = strtolower($url['host']) . ':' . ($url['port'] ?? (($url['scheme'] ?? 'https') === 'https' ? 443 : 80));
             $this->aliases[$key][] = $prefix;
         }
+        // A canonical URL may be nested beneath the installation URL on the
+        // same host. Strip the most specific matching prefix, not whichever
+        // setting happened to be registered first.
+        foreach ($this->aliases as &$prefixes) {
+            usort($prefixes, static fn(string $a, string $b): int => strlen($b) <=> strlen($a));
+        }
+        unset($prefixes);
     }
 
     private function text(string $it, string $en): string { return function_exists('t') ? t($it, $en) : $en; }

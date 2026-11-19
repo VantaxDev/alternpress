@@ -79,6 +79,19 @@ No parser or public rendering change. Original local candidate is preserved.
 Unix FIFO interaction runs where supported; device/Windows behavior is not
 established by this test. Publication/scheme/alias candidates remain separate.
 
+## P1 — Longest URL alias prefix (stacked review, Nov 19)
+
+Promotes existing `2c958f0` (no new resolver implementation): prefer the most
+specific matching alias prefix on the same host/port instead of registration
+order. Nested install/canonical aliases previously caused false missing targets
+and orphan-image suggestions. Segment-boundary matching remains unchanged.
+Original60 checks plus8 interaction checks cover PR20 entity-bearing raw CSS
+and Markdown targets with both complete and wrong-directory inventories.
+
+Stacked explicitly on PR20 head `a4bebc6` (PR19/18 below it), not on main or PR17.
+Original candidate preserved. Scheme-case/publication candidates remain separate;
+no combined compatibility claim for them. No public routing changes.
+
 ## Pending diagnostics correctness review (not integrated)
 
 The integrated diagnostics still has the following correctness gaps. Local
