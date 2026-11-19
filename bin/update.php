@@ -7,7 +7,7 @@ if (PHP_SAPI !== 'cli') { http_response_code(404); exit; }
 class APUpdateBusy extends RuntimeException {}
 class APCodeUpdater {
     public const EXTENSIONS = ['mbstring', 'fileinfo', 'gd', 'session', 'json', 'zlib'];
-    public const REQUIRED = ['LICENSE', 'NOTICE', 'LICENSES/MIT.txt', 'lib/languages.php', 'index.php', 'alt-cli', 'lib/bootstrap.php', 'lib/Parsedown.php', 'lib/settings.php', 'lib/admin.php', 'lib/backups.php', 'lib/discovery.php', 'lib/diagnostics.php', 'lib/page-cache.php', 'lib/update-health.php', 'lib/update-release.php', 'admin/index.php', 'admin/settings.php', 'admin/maintenance.php', 'admin/maintenance-actions.php', 'bin/password.php', 'bin/cache-warm.php', 'bin/update.php', 'assets/base.css', 'assets/site.css', 'assets/admin.css', 'assets/admin.js', 'assets/favicon.svg', 'assets/theme.example.css'];
+    public const REQUIRED = ['LICENSE', 'NOTICE', 'LICENSES/MIT.txt', 'lib/languages.php', 'lib/publication.php', 'index.php', 'alt-cli', 'lib/bootstrap.php', 'lib/Parsedown.php', 'lib/settings.php', 'lib/admin.php', 'lib/backups.php', 'lib/discovery.php', 'lib/diagnostics.php', 'lib/page-cache.php', 'lib/update-health.php', 'lib/update-release.php', 'admin/index.php', 'admin/settings.php', 'admin/maintenance.php', 'admin/maintenance-actions.php', 'bin/password.php', 'bin/cache-warm.php', 'bin/update.php', 'assets/base.css', 'assets/site.css', 'assets/admin.css', 'assets/admin.js', 'assets/favicon.svg', 'assets/theme.example.css'];
     private array $locks = [];
     private string $site;
     private string $state;

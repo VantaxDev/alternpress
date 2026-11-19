@@ -104,6 +104,19 @@ Stacked on PR21 head `eee6da7` (PR20/19/18 below), not main or PR17. Original
 candidate preserved. Publication-timing candidate remains independent. No public
 routing change; HTTP(S) URLs are not fetched by diagnostics or these tests.
 
+## P1 — Scheduled diagnostic destinations (stacked review, Nov19)
+
+Promotes existing `bf9e1e3`: reuse the unchanged publication predicate through
+`lib/publication.php`; future/invalid-time posts, post attachments and privacy
+notices are not accepted as public destinations. Draft/scheduled source images
+remain retained. Other page behavior remains unchanged. Updater REQUIRED list
+and isolated bootstrap fixtures include the shared module.
+
+Stacked on PR22 head `d6610f2` (PR21/20/19/18 below), not main or PR17.
+Original100 diagnostic checks plus8 stack interactions; offline module/load-order
+and package dependency tests do not run an update or HTTP health probe. Public
+publication policy/function bodies are moved verbatim, not broadened.
+
 ## Pending diagnostics correctness review (not integrated)
 
 The integrated diagnostics still has the following correctness gaps. Local

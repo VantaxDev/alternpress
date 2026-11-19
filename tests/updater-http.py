@@ -126,7 +126,7 @@ with installation() as fixture:
     base, site, release, runner, mode, url = fixture
     archive, sha = package(base, release, runner)
     packed = json.loads(gzip.decompress(archive.read_bytes()))
-    for name in ['LICENSE', 'NOTICE', 'LICENSES/MIT.txt', 'lib/languages.php']:
+    for name in ['LICENSE', 'NOTICE', 'LICENSES/MIT.txt', 'lib/languages.php', 'lib/publication.php']:
         expect(base64.b64decode(packed['files'][name]) == (release / name).read_bytes(), 'package retains exact required license/dependency: ' + name)
     saved = write_during_update(site)
     old = digest(site / 'index.php')

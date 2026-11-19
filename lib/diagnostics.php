@@ -3,6 +3,7 @@ declare(strict_types=1);
 
 require_once __DIR__ . '/Parsedown.php';
 require_once __DIR__ . '/languages.php';
+require_once __DIR__ . '/publication.php';
 
 /**
  * Read-only site diagnostics. No network requests, chmod, deletion or cache writes.
@@ -262,14 +263,16 @@ final class AP_Diagnostics
         if (preg_match('~^/post/([a-z0-9]+(?:-[a-z0-9]+)*)(?:/([^/]+\.(?:jpg|jpeg|png|webp|gif)))?$~i', $route, $match)) {
             $prefix = 'content/' . $language . '/post/' . $match[1];
             $document = $this->documents[$prefix . '/index.md'] ?? null;
-            if (!$document || ($document['meta']['status'] ?? 'published') !== 'published') return false;
+            if (!$document || !ap_published($document['meta'])) return false;
             return empty($match[2]) || (isset($this->files[$prefix . '/' . $match[2]]) && is_readable($this->files[$prefix . '/' . $match[2]]));
         }
         return false;
     }
     private function published(string $path): bool {
         $document = $this->documents[$path] ?? null;
-        return $document !== null && ($document['meta']['status'] ?? 'published') === 'published';
+        if ($document === null) return false;
+        if (str_ends_with($path, '/privacy/index.md')) return ap_published($document['meta']);
+        return ($document['meta']['status'] ?? 'published') === 'published';
     }
 
     private function checkLink(string $url, string $source, string $context, bool $image): void

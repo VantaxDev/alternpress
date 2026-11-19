@@ -2,6 +2,10 @@
 
 ## Unreleased
 
+- Align diagnostics with scheduled publication: future or invalid-time articles,
+  their attachments and optional privacy notices are not public link targets.
+  Retain image references in all drafts and scheduled content during orphan scans.
+
 - Integrate the opt-in verified code updater, configurable language list,
   server-rendered business footer and cookie-free public language routing.
 - Keep site-specific policy drafts outside the distribution; optional notices
