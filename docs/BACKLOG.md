@@ -66,6 +66,19 @@ on main or PR17. Original local candidate remains preserved. Unix FIFO/socket
 fixtures are covered; Windows skips this Unix-only test and devices are not
 created. Other publication/URL candidates remain independent and unintegrated.
 
+## P1 — Raw URL entity semantics (stacked review, Nov 19)
+
+Promotes existing `f6291d3`, not a duplicate implementation. Decode HTML entities
+once when extracting rendered Markdown attributes; preserve raw CSS/custom-CSS
+and cover metadata URL bytes. This prevents false missing/orphan results and
+accidental references to decoded-lookalike filenames. Renderer target checks
+and partial-inventory interaction cases supplement the original regressions.
+
+Stacked on PR19 head `e611713` (which depends on PR18); neither includes PR17.
+No parser or public rendering change. Original local candidate is preserved.
+Unix FIFO interaction runs where supported; device/Windows behavior is not
+established by this test. Publication/scheme/alias candidates remain separate.
+
 ## Pending diagnostics correctness review (not integrated)
 
 The integrated diagnostics still has the following correctness gaps. Local
