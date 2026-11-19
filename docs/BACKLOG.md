@@ -38,6 +38,71 @@ Mixed text/image link labels, multiple images per link, arbitrary nested labels,
 parenthesized URL destinations and nested containers remain unsupported.
 Do not broaden these implicitly while fixing unrelated escaping or boundaries.
 
+## P1 — Required directory types (draft review candidate, Nov 19)
+
+This review promotes the existing `e194221` implementation, not a new parallel
+fix. Required content/cache/storage/media paths that are files now emit a
+path-specific `not_directory` error, mark the inventory incomplete and suppress
+unreliable orphan-photo suggestions. Ordinary nested files remain supported.
+The 35-check regression covers all four paths, exact counts, recovery and
+unchanged bytes. No files are deleted by diagnostics.
+
+This branch is based on main, not stacked on PR #17. Missing-directory and
+special-file fixes remain separate; no combined compatibility is claimed.
+PR #17 was rechecked Nov 19: OPEN draft at `6190cfb`, both CI runs successful.
+Its Nov 18 test-only follow-up and Nov 19 handoff remain preserved separately.
+
+## Pending diagnostics correctness review (not integrated)
+
+The integrated diagnostics still has the following correctness gaps. Local
+candidates exist, but are independent changes based on `b530505`, not a combined
+or deployment-tested release. Review their overlap before integration; do not
+reapply them as new fixes merely because main still exhibits the defects.
+
+| Gap | Existing local candidate | Commit |
+| --- | --- | --- |
+| Future/invalid-time publications accepted as public link destinations | `fix/diagnostics-scheduled-targets-2026-11-09` | `bf9e1e3` |
+| Uppercase HTTP(S) schemes infer incorrect default ports | `fix/diagnostics-url-scheme-2026-11-10` | `2ea9a74` |
+| Nested aliases select a shorter prefix before the more specific one | `fix/diagnostics-alias-prefix-2026-11-11` | `2c958f0` |
+| Raw CSS/cover URLs are incorrectly HTML-entity-decoded | `fix/diagnostics-raw-url-entities-2026-11-12` | `f6291d3` |
+| Missing required directories leave scan completeness true | `fix/diagnostics-missing-directories-2026-11-13` | `00ec8a2` |
+| Required paths of the wrong type leave scan completeness true | `fix/diagnostics-directory-types-2026-11-14` | `e194221` |
+| Unsupported filesystem entries are silently skipped | `fix/diagnostics-special-files-2026-11-15` | `517a3b3` |
+
+The scan-completeness gaps can produce unreliable orphan-photo candidates.
+Diagnostics never deletes these candidates; manually verify references before
+acting on them. The URL and publication candidates affect the same diagnostics
+module, while publication also introduces a shared runtime module and updater
+packaging requirements. Individual passing tests do not establish combined
+compatibility. Re-run the full regression suite on any combined candidate.
+The seven branches above identify the original local candidates, not promises
+of availability in a released version. Markdown P3 limits remain deliberate.
+
+### Missing-tree review handoff (2026-11-19)
+
+The missing-directory candidate has a separate review lineage; do not count it
+as an eighth independent runtime fix:
+
+| Role | Branch | Commit | Base (ancestor) |
+| --- | --- | --- | --- |
+| Original implementation | `fix/diagnostics-missing-directories-2026-11-13` | `00ec8a2` | `b530505` |
+| Review candidate, recorded as draft [PR #17](https://github.com/VantaxDev/alternpress/pull/17) on Nov 17 | `fix/diagnostics-missing-trees-review` | `6190cfb` | `b530505` |
+| Test-only follow-up | `test/diagnostics-multiple-missing-trees-2026-11-18` | `22bb347` | `6190cfb` |
+
+The follow-up exercises all 11 combinations of two or more missing required
+trees with 77 additional assertions. It depends on the review candidate's
+runtime fix and single-tree regression fixture; it is not a standalone fix
+against main. Its recorded targeted run passed 203 checks across three scripts
+and 43 PHP syntax checks, not the full suite. PR state and remote CI must be
+rechecked before any integration; this inventory records local ancestry only.
+
+For review, choose one missing-tree runtime lineage, then assess the test-only
+follow-up. Do not apply both the original and review implementations. The
+wrong-type and special-file candidates remain independent work with overlapping
+scan-completeness code, not dependencies of this follow-up. Combined regression
+coverage and integration authorization are still required; none of these local
+references establishes deployment readiness.
+
 ## Integrated review history
 
 The combined Markdown changes were merged in PR #13, including list starts
