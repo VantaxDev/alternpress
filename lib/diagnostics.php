@@ -107,7 +107,13 @@ final class AP_Diagnostics
             $this->report['summary']['permission_issues']++;
             return;
         }
-        if (!$directory && !is_file($path)) return;
+        if (!$directory && !is_file($path)) {
+            // FIFOs, sockets and devices cannot be inventoried as ordinary
+            // sources. Never open them, or claim a complete orphan inventory.
+            $this->report['complete'] = false;
+            $this->issue('warning', 'unsupported_file_type', 'Tipo di file non supportato: percorso escluso dalla scansione.', 'Unsupported file type: path excluded from the scan.', $relative);
+            return;
+        }
         $readable = is_readable($path);
         $writable = is_writable($path);
         $searchable = !$directory || DIRECTORY_SEPARATOR === '\\' || is_executable($path);
