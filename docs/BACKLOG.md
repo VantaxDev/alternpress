@@ -117,6 +117,20 @@ Original100 diagnostic checks plus8 stack interactions; offline module/load-orde
 and package dependency tests do not run an update or HTTP health probe. Public
 publication policy/function bodies are moved verbatim, not broadened.
 
+## P1 — Missing-tree compatibility promotion (stacked review, Nov19)
+
+Promotes ONLY PR17 lineage `6190cfb` runtime once, plus dependent Nov18 test-only
+follow-up `22bb347` (all11 multi-missing subsets). Does not also apply original
+`00ec8a2`. Missing trees mark the inventory incomplete and suppress unreliable
+orphans, retaining exact errors. PR17 remains unchanged as original review source.
+
+Stacked on PR23 head `568836b` (PR22/21/20/19/18 below). All seven original runtime
+gaps are now combined in this review stack, not main/deployed. Single/multi-tree
+regressions plus mixed missing/wrong-type/FIFO cases verify publication scheduling,
+mixed-case nested aliases and entity-bearing media references without new policy.
+The Nov18 follow-up is test coverage, not another runtime fix. Full-release and
+HTTP verification remain separate; no release/deployment readiness claim.
+
 ## Pending diagnostics correctness review (not integrated)
 
 The integrated diagnostics still has the following correctness gaps. Local
