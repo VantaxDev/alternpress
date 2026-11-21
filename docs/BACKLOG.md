@@ -131,6 +131,20 @@ mixed-case nested aliases and entity-bearing media references without new policy
 The Nov18 follow-up is test coverage, not another runtime fix. Full-release and
 HTTP verification remain separate; no release/deployment readiness claim.
 
+## P1 — Network-path URLs inherit the origin scheme (new review, Nov21)
+
+References such as `//example.test/blog/media/image.jpg` previously defaulted
+to HTTPS even on HTTP sites. Diagnostics skipped the real local reference and
+could suggest its image as orphan. Inherit the known origin scheme (canonical
+site URL fallback for standalone scans), not the origin port. Explicit schemes
+and ports preserve existing matching. Without either configured scheme, retain
+the previous HTTPS fallback. No URL fetch or public routing changes.
+
+Stacked on PR24 `2f47ab8`; this is a new gap, not reapplication of the seven
+original fixes. Tests cover custom CSS and local stylesheet references, HTTP/HTTPS case,
+explicit ports, non-inheritance of origin ports and canonical-only scans.
+The original PR17 and stack PR18–24 remain unchanged; no main integration.
+
 ## Pending diagnostics correctness review (not integrated)
 
 The integrated diagnostics still has the following correctness gaps. Local

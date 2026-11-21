@@ -225,7 +225,11 @@ final class AP_Diagnostics
         if (isset($parts['scheme']) && !in_array(strtolower($parts['scheme']), ['http', 'https'], true)) return ['skip', ''];
         $path = rawurldecode($parts['path'] ?? '');
         if (isset($parts['host'])) {
-            $port = $parts['port'] ?? (strtolower($parts['scheme'] ?? 'https') === 'https' ? 443 : 80);
+            // Network-path URLs inherit the document scheme, not its port.
+            // Standalone CLI scans may know only the canonical site URL.
+            $scheme = $parts['scheme'] ?? (parse_url((string) $this->options['origin'], PHP_URL_SCHEME)
+                ?: parse_url((string) $this->options['site_url'], PHP_URL_SCHEME) ?: 'https');
+            $port = $parts['port'] ?? (strtolower($scheme) === 'https' ? 443 : 80);
             $key = strtolower($parts['host']) . ':' . $port;
             foreach ($this->aliases[$key] ?? [] as $prefix) {
                 if ($prefix !== '' && $path !== $prefix && !str_starts_with($path, $prefix . '/')) continue;
