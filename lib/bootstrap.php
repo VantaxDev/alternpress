@@ -60,7 +60,8 @@ function ap_canonical_url(string $language, string $relativePath = '/'): string 
 function ap_custom_css(): string {
     return preg_replace_callback('~url\(\s*([\'\"]?)(/[^)\'\"]*)\1\s*\)~i', static function(array $m): string {
         $path = trim($m[2]);
-        if (ap_base() !== '' && $path !== ap_base() && !str_starts_with($path, ap_base() . '/')) $path = ap_url($path);
+        // A network-path URL has an authority, not an installation-relative path.
+        if (!str_starts_with($path, '//') && ap_base() !== '' && $path !== ap_base() && !str_starts_with($path, ap_base() . '/')) $path = ap_url($path);
         return 'url(' . $m[1] . $path . $m[1] . ')';
     }, (string) ap_config('custom_css')) ?? '';
 }
