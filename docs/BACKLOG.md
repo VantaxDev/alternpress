@@ -145,6 +145,20 @@ original fixes. Tests cover custom CSS and local stylesheet references, HTTP/HTT
 explicit ports, non-inheritance of origin ports and canonical-only scans.
 The original PR17 and stack PR18–24 remain unchanged; no main integration.
 
+## P1 — Custom CSS network-path URLs in subdirectories (review, Nov25)
+
+Trusted config/legacy custom CSS previously rewrote `url(//cdn.example/image.png)` as an installation
+path such as `/blog/cdn.example/image.png`, breaking backgrounds and fonts.
+Skip installation-prefix rewriting for network-path URLs; keep existing handling
+of single-slash paths, already-prefixed paths and relative/absolute URLs.
+Tests cover root/nested installs, quoting, explicit ports, query/fragments and
+mixed declarations. Admin CSS still rejects external/network-path resources; regression-tested.
+No renderer filtering or CSS validation policy changes.
+
+Stacked on PR25 `152f9d2`; CI-only candidate `af17dc5` and later local test/docs
+candidates remain independent and preserved. This fixes served CSS, not another
+diagnostic-only or test-only candidate. No main integration or deployment.
+
 ## Pending diagnostics correctness review (not integrated)
 
 The integrated diagnostics still has the following correctness gaps. Local
