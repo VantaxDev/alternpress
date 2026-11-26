@@ -218,3 +218,29 @@ prior MIT notices retained. PR #15 integrated the table/fence boundary.
 Preserve those histories and do not reapply stale alternative implementations.
 The table/block follow-up is included with the combined feature integration;
 the remaining P3 limits above are deliberate, not undelivered ready code.
+
+## P1 — Diagnostic dot segments before URL aliases (review, Nov26)
+
+New product fix stacked on PR26 `542333e`: normalize absolute/root-relative
+URL paths with the existing resolver before comparing installation/canonical
+prefixes. A CSS reference `/unused/../blog/media/used.jpg` reaches the local
+image in a browser but previously appeared external/missing and left a false
+orphan candidate. References that normalize outside an absolute URL alias must
+not retain the local image. No network fetch, routing or deletion changes.
+The 42-check synthetic regression covers absolute, network-path and root-relative
+URLs, interior/current/parent segments, outside-prefix and remote-host controls.
+Existing test-only `12e4c87` and CI-only `af17dc5` remain separate and unchanged.
+Remaining: parent review/integration of stacked drafts; deliberate Markdown P3
+limits and general CSS parsing remain out of scope.
+
+### PR27 correction — Nov26 parent P2 review
+
+Initial head `3d1ef95` is superseded: path validation ran before authority
+scope, misreporting malformed external URLs as local missing links. Corrected
+resolution skips unmatched host/port first and retains raw prefix checks when
+a path cannot normalize; out-of-alias malformed paths remain external. Valid
+local dot-segment behavior stays covered. Added24 permanent controls spanning
+remote host, network path, wrong port and same-host outside-alias paths.
+Original oracle must pass on corrected Git snapshot; owner execution is not
+independent closure. Parent re-review remains required. Earlier report/tests
+belong to the superseded head; new correction evidence is kept separately.
