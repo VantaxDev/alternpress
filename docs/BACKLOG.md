@@ -218,3 +218,17 @@ prior MIT notices retained. PR #15 integrated the table/fence boundary.
 Preserve those histories and do not reapply stale alternative implementations.
 The table/block follow-up is included with the combined feature integration;
 the remaining P3 limits above are deliberate, not undelivered ready code.
+
+## P1 — Diagnostic dot segments before URL aliases (review, Nov26)
+
+New product fix stacked on PR26 `542333e`: normalize absolute/root-relative
+URL paths with the existing resolver before comparing installation/canonical
+prefixes. A CSS reference `/unused/../blog/media/used.jpg` reaches the local
+image in a browser but previously appeared external/missing and left a false
+orphan candidate. References that normalize outside an absolute URL alias must
+not retain the local image. No network fetch, routing or deletion changes.
+The 42-check synthetic regression covers absolute, network-path and root-relative
+URLs, interior/current/parent segments, outside-prefix and remote-host controls.
+Existing test-only `12e4c87` and CI-only `af17dc5` remain separate and unchanged.
+Remaining: parent review/integration of stacked drafts; deliberate Markdown P3
+limits and general CSS parsing remain out of scope.

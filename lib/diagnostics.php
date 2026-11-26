@@ -224,6 +224,12 @@ final class AP_Diagnostics
         if ($parts === false || isset($parts['user']) || isset($parts['pass'])) return ['invalid', ''];
         if (isset($parts['scheme']) && !in_array(strtolower($parts['scheme']), ['http', 'https'], true)) return ['skip', ''];
         $path = rawurldecode($parts['path'] ?? '');
+        // Resolve dot segments before matching installation/canonical prefixes,
+        // as browsers do for absolute and root-relative URL paths.
+        if (str_starts_with($path, '/')) {
+            $path = $this->normalizePath($path);
+            if ($path === null) return ['local', null];
+        }
         if (isset($parts['host'])) {
             // Network-path URLs inherit the document scheme, not its port.
             // Standalone CLI scans may know only the canonical site URL.
