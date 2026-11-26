@@ -224,12 +224,6 @@ final class AP_Diagnostics
         if ($parts === false || isset($parts['user']) || isset($parts['pass'])) return ['invalid', ''];
         if (isset($parts['scheme']) && !in_array(strtolower($parts['scheme']), ['http', 'https'], true)) return ['skip', ''];
         $path = rawurldecode($parts['path'] ?? '');
-        // Resolve dot segments before matching installation/canonical prefixes,
-        // as browsers do for absolute and root-relative URL paths.
-        if (str_starts_with($path, '/')) {
-            $path = $this->normalizePath($path);
-            if ($path === null) return ['local', null];
-        }
         if (isset($parts['host'])) {
             // Network-path URLs inherit the document scheme, not its port.
             // Standalone CLI scans may know only the canonical site URL.
@@ -237,6 +231,11 @@ final class AP_Diagnostics
                 ?: parse_url((string) $this->options['site_url'], PHP_URL_SCHEME) ?: 'https');
             $port = $parts['port'] ?? (strtolower($scheme) === 'https' ? 443 : 80);
             $key = strtolower($parts['host']) . ':' . $port;
+            // Remote authorities are out of scope, regardless of path validity.
+            if (!isset($this->aliases[$key])) return ['external', ''];
+            // Normalize valid paths before alias matching. For invalid paths,
+            // retain the old prefix check: only an in-scope alias reports them.
+            $path = $this->normalizePath($path) ?? $path;
             foreach ($this->aliases[$key] ?? [] as $prefix) {
                 if ($prefix !== '' && $path !== $prefix && !str_starts_with($path, $prefix . '/')) continue;
                 return ['local', $this->normalizePath(substr($path, strlen($prefix)) ?: '/')];
@@ -244,6 +243,8 @@ final class AP_Diagnostics
             return ['external', ''];
         }
         if (str_starts_with($path, '/')) {
+            $path = $this->normalizePath($path);
+            if ($path === null) return ['local', null];
             if ($this->base !== '' && ($path === $this->base || str_starts_with($path, $this->base . '/'))) $path = substr($path, strlen($this->base));
         } else {
             $path = $path === '' ? $context : substr($context, 0, (int) strrpos($context, '/') + 1) . $path;

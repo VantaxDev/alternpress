@@ -30,5 +30,14 @@ try {
         dot_check($report['summary']['external_skipped'] === 1, 'Outside alias stays external: ' . $url);
         dot_check(count($report['orphans']) === 1, 'Outside alias does not retain local image');
     }
+    // Authority/alias scope must be decided before rejecting malformed paths.
+    foreach (['https://remote.test', '//remote.test', 'https://example.test:8443', 'https://example.test/outside'] as $authority) {
+        foreach (['/../media/used.jpg', '/%00/media/used.jpg', '/%5c/media/used.jpg'] as $path) {
+            $url = $authority . $path;
+            $report = ap_diagnostics(['root' => $root, 'base_path' => '/blog', 'origin' => 'https://example.test', 'custom_css' => 'a{background:url("' . $url . '")}']);
+            dot_check($report['summary']['external_skipped'] === 1 && $report['summary']['links_checked'] === 0 && $report['summary']['missing_links'] === 0, 'Out-of-scope path stays skipped: ' . $url);
+            dot_check(count($report['orphans']) === 1, 'Out-of-scope malformed reference does not retain image');
+        }
+    }
     echo "$checks dot-segment diagnostic checks passed.\n";
 } finally { dot_remove($root); }
